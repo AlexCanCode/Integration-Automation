@@ -67,6 +67,27 @@ newLicense = {
 	"state": ""
 }
 
+newCourse = {
+	"agency": "",
+	"name": "",
+	"dateTaken": 0,
+	"number": 0
+}
+
+newCert = {
+	"agency": "",
+	"number": 0, 
+	"expDate": 0, 
+	"expires": True #optional
+}
+
+newDegree {
+	"degree": "",
+	"specialty": "",
+	"school": "",
+	"gradYear": 0
+}
+
 employeeInfo = {
 	"DetailField_FullName_Section_1": ["name", "str"],
 	"DetailField_Title_Section_1": ["title", "str"],
