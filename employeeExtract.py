@@ -3,7 +3,7 @@ from datetime import datetime
 from dateutil import relativedelta
 import csv
 
-mydoc = minidom.parse('sasher.xml')
+mydoc = minidom.parse('kincaid.xml')
 
 section = mydoc.getElementsByTagName('Detail')
 
@@ -44,35 +44,35 @@ def formatDate(date):
 	return datetime.strptime(date.rstrip("T00:00:00"), '%Y-%m-%d').date() #May add to Employee
 
 #base class Employee
-
 class Employee:
+	"""Base Class for all employees, used to write each csv row"""
 	def __init__(self):
 		self.bioData = None
 
 	detailKey = {
-		"DetailField_FullName_Section_1": ["bio", "name", "str"],
+		"DetailField_FullName_Section_1": "bio",
 		"DetailField_Title_Section_1": "bio",
 		"DetailField_HireDate_Section_1": "bio",
 		"DetailField_PriorYearsFirm_Section_1": "bio", 
 		"DetailField_YearsOtherFirms_Section_1": "bio",
-		"DetailField_Suffix_Section_1": "bio"
-		# "detail_Licenses_License" : ["type", "lic"],
-		# "detail_Licenses_Earned": ["dateEarned", "lic"],
-		# "detail_Licenses_State": ["state", "lic"],
-		# "detail_Licenses_Number": ["number", "lic"],
-		# "detail_Licenses_Expires": ["dateExpired", "lic"], #Hook to signal end of newLicense object
-		# "detail_gridUDCol_Employees_Courses_custAgency": "", #Need to rewrite to accept multiple courses and certs
-		# "detail_gridUDCol_Employees_Courses_custCourseName": "",
-		# "detail_gridUDCol_Employees_Courses_custDate": "",
-		# "detail_gridUDCol_Employees_Courses_custCourseNumber": "",
-		# "detail_gridUDCol_Employees_Certifications_custCertAgency": "",
-		# "detail_gridUDCol_Employees_Certifications_custCertNumber": "",
-		# "detail_gridUDCol_Employees_Certifications_custExpirationDate": "",
-		# "detail_gridUDCol_Employees_Certifications_CustNoExpiration": "",
-		# "detail_Education_Degree": "",
-		# "detail_Education_Specialty": "",
-		# "detail_Education_Institution": "",
-		# "detail_Education_Year": "",
+		"DetailField_Suffix_Section_1": "bio",
+		"detail_Licenses_License": "lic",
+		"detail_Licenses_Earned": "lic",
+		"detail_Licenses_State": "lic",
+		"detail_Licenses_Number": "lic",
+		"detail_Licenses_Expires":  "lic", #Hook to signal end of newLicense object
+		"detail_gridUDCol_Employees_Courses_custAgency": "cor", #Need to rewrite to accept multiple courses and certs
+		"detail_gridUDCol_Employees_Courses_custCourseName": "cor",
+		"detail_gridUDCol_Employees_Courses_custDate": "cor",
+		"detail_gridUDCol_Employees_Courses_custCourseNumber": "cor",
+		"detail_gridUDCol_Employees_Certifications_custCertAgency": "cert",
+		"detail_gridUDCol_Employees_Certifications_custCertNumber": "cert",
+		"detail_gridUDCol_Employees_Certifications_custExpirationDate": "cert",
+		"detail_gridUDCol_Employees_Certifications_CustNoExpiration": "cert",
+		"detail_Education_Degree": "edu",
+		"detail_Education_Specialty": "edu",
+		"detail_Education_Institution": "edu",
+		"detail_Education_Year": "edu",
 		# "Design and Inspection Resume": "",
 		# "detail_level": ""
 	}
@@ -93,7 +93,11 @@ class Bio(Employee):
 			"title": "",
 			"hireDate": 0,
 			"priorYearsFirm": 0,
-			"priorYearsOther": 0
+			"priorYearsOther": 0,
+			"licenses": [],
+			"courses": [],
+			"certifications": [], 
+			"education": []
 		}
 
 	bioKey = {
@@ -117,17 +121,33 @@ class Bio(Employee):
 		difference = relativedelta.relativedelta(today, self.data["hireDate"]).years
 		self.data["totalYearsExp"] = (difference + self.data["priorYearsFirm"] + self.data["priorYearsOther"])
 
+class License(Bio):
+
+	def __init__(self):
+		self.licenseData = {
+			"number": 0, 
+			"type": "",
+			"dateEarned": 0,
+			"dateExpired": 0,
+			"state": "",
+			"proposalUse": False
+		}
+
+	licneseKey = {
+		"detail_Licenses_License": ["type", "lic"],
+		"detail_Licenses_Earned": ["dateEarned", "lic"],
+		"detail_Licenses_State": ["state", "lic"],
+		"detail_Licenses_Number": ["number", "lic"],
+		"detail_Licenses_Expires": ["dateExpired", "lic"], 
+	}
+
+	def licenseDataProcessor(self, val, tagName):
+		dataType = self.licneseKey[tagName][1]
+		formattedData = self.formatData(val, dataType)  #Functioned derrived from base class Employee
+		self.licenseData[self.licneseKey[tagName][0]] = formattedData
 
 Sasher = Employee()
 SasherBio = Bio()
-
-newLicense = {
-	"number": 0, 
-	"type": "",
-	"dateEarned": 0,
-	"dateExpired": 0,
-	"state": ""
-}
 
 newCourse = {
 	"agency": "",
@@ -155,8 +175,16 @@ newDegree = {
 for element in section[:]:
 	for key in Employee.detailKey:
 		if element.getAttribute(key):
-			SasherBio.bioDataProcessor(element.getAttribute(key), key)
-			# appendStr(element.getAttribute(key), employeeInfo[key][0], employeeInfo[key][1]) #This is where data processing function is called.
+			if Employee.detailKey[key] == "bio":
+				SasherBio.bioDataProcessor(element.getAttribute(key), key) # LEFT OFF - this function needs to be dynamic and needs to be able to recognize each object that it needs to be delegated too. 
+			if Employee.detailKey[key] == "lic":
+				SasherBio.data["licenses"].append(element.getAttribute(key)) 
+			if Employee.detailKey[key] == "cor":
+				SasherBio.data["courses"].append(element.getAttribute(key))
+			if Employee.detailKey[key] == "cert":
+				SasherBio.data["certifications"].append(element.getAttribute(key)) 
+			if Employee.detailKey[key] == "edu":
+				SasherBio.data["education"].append(element.getAttribute(key)) 
 
 SasherBio.calculateYearsExp()
 
