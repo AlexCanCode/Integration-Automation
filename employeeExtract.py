@@ -39,29 +39,57 @@ def appendStr(val, field, dataType):
 			newLicense[field] == formatDate(val)
 			bio["licenses"].update({ newLicense["state"] + str(newLicense["number"]) : newLicense  })
 
-		
-
-
-def calculateYearsBetween(startDate):
-	today = datetime.now()
-	difference = relativedelta.relativedelta(today, startDate).years
-	return difference
 
 def formatDate(date):
-	return datetime.strptime(date.rstrip("T00:00:00"), '%Y-%m-%d').date()
+	return datetime.strptime(date.rstrip("T00:00:00"), '%Y-%m-%d').date() #May add to Employee
 
 #base class Employee
 
-# class Employee:
-# 	def __init__(self, bio, licnses, courses, certs, education, projects)
+class Employee:
+	def __init__(self):
+		self.bioData = None
 
+	detailKey = {
+		"DetailField_FullName_Section_1": ["bio", "name", "str"],
+		"DetailField_Title_Section_1": "bio",
+		"DetailField_HireDate_Section_1": "bio",
+		"DetailField_PriorYearsFirm_Section_1": "bio", 
+		"DetailField_YearsOtherFirms_Section_1": "bio",
+		"DetailField_Suffix_Section_1": "bio"
+		# "detail_Licenses_License" : ["type", "lic"],
+		# "detail_Licenses_Earned": ["dateEarned", "lic"],
+		# "detail_Licenses_State": ["state", "lic"],
+		# "detail_Licenses_Number": ["number", "lic"],
+		# "detail_Licenses_Expires": ["dateExpired", "lic"], #Hook to signal end of newLicense object
+		# "detail_gridUDCol_Employees_Courses_custAgency": "", #Need to rewrite to accept multiple courses and certs
+		# "detail_gridUDCol_Employees_Courses_custCourseName": "",
+		# "detail_gridUDCol_Employees_Courses_custDate": "",
+		# "detail_gridUDCol_Employees_Courses_custCourseNumber": "",
+		# "detail_gridUDCol_Employees_Certifications_custCertAgency": "",
+		# "detail_gridUDCol_Employees_Certifications_custCertNumber": "",
+		# "detail_gridUDCol_Employees_Certifications_custExpirationDate": "",
+		# "detail_gridUDCol_Employees_Certifications_CustNoExpiration": "",
+		# "detail_Education_Degree": "",
+		# "detail_Education_Specialty": "",
+		# "detail_Education_Institution": "",
+		# "detail_Education_Year": "",
+		# "Design and Inspection Resume": "",
+		# "detail_level": ""
+	}
 
-class Bio:
-	"""Class for handling bio information for each employee"""
+	def formatData(self, data, dataType):
+		if dataType == "int":
+			return int(data)
+		elif dataType == "date":
+			return formatDate(data)
+		return data
+
+class Bio(Employee): 
+	"""Class for handling bio information for each employee. Calculates tota; years exp"""
 	def __init__(self):
 		self.data = {
-			"name": "", 
-			"nameSuffix": "",											#could split between first last and include preffered too
+			"name": "", #could split between first last and include preffered too
+			"nameSuffix": "",							
 			"title": "",
 			"hireDate": 0,
 			"priorYearsFirm": 0,
@@ -71,31 +99,27 @@ class Bio:
 	bioKey = {
 		"DetailField_FullName_Section_1": ["name", "str"],
 		"DetailField_Title_Section_1": ["title", "str"],
-		"DetailField_HireDate_Section_1": ["hireDate", "hireDate"],
+		"DetailField_HireDate_Section_1": ["hireDate", "date"],
 		"DetailField_PriorYearsFirm_Section_1": ["priorYearsFirm", "int"], 
 		"DetailField_YearsOtherFirms_Section_1": ["priorYearsOther", "int"], 
 		"DetailField_Suffix_Section_1": ["nameSuffix", "str"] 
-
 	}
 
 	def bioDataProcessor(self, val, tagName):
-		if self.bioKey[tagName][1] == "hireDate":
-			self.data[self.bioKey[tagName][0]] = formatDate(val)
-		elif self.bioKey[tagName][1] == "int":
-			self.data[self.bioKey[tagName][0]] = int(val)
-		elif self.bioKey[tagName][1] == "str":
-			self.data[self.bioKey[tagName][0]] = val
+		dataType = self.bioKey[tagName][1]
+		formattedData = self.formatData(val, dataType)  #Functioned derrived from base class Employee
+		self.data[self.bioKey[tagName][0]] = formattedData
 
-		# print(val, self.bioKey[info]) 
 
-	# "totalYearsExp": calculateYearsExp(self, self.hireDate)
 
 	def calculateYearsExp(self):
 		today = datetime.now()
 		difference = relativedelta.relativedelta(today, self.data["hireDate"]).years
 		self.data["totalYearsExp"] = (difference + self.data["priorYearsFirm"] + self.data["priorYearsOther"])
 
-sasherBio = Bio()
+
+Sasher = Employee()
+SasherBio = Bio()
 
 newLicense = {
 	"number": 0, 
@@ -126,43 +150,19 @@ newDegree = {
 	"gradYear": 0
 }
 
-employeeInfo = {
-	"DetailField_FullName_Section_1": "bio",
-	"DetailField_Title_Section_1": "bio",
-	"DetailField_HireDate_Section_1": "bio",
-	"DetailField_PriorYearsFirm_Section_1": "bio", 
-	"DetailField_YearsOtherFirms_Section_1": "bio",
-	"DetailField_Suffix_Section_1": "bio"
-	# "detail_Licenses_License" : ["type", "lic"],
-	# "detail_Licenses_Earned": ["dateEarned", "lic"],
-	# "detail_Licenses_State": ["state", "lic"],
-	# "detail_Licenses_Number": ["number", "lic"],
-	# "detail_Licenses_Expires": ["dateExpired", "lic"], #Hook to signal end of newLicense object
-	# "detail_gridUDCol_Employees_Courses_custAgency": "", #Need to rewrite to accept multiple courses and certs
-	# "detail_gridUDCol_Employees_Courses_custCourseName": "",
-	# "detail_gridUDCol_Employees_Courses_custDate": "",
-	# "detail_gridUDCol_Employees_Courses_custCourseNumber": "",
-	# "detail_gridUDCol_Employees_Certifications_custCertAgency": "",
-	# "detail_gridUDCol_Employees_Certifications_custCertNumber": "",
-	# "detail_gridUDCol_Employees_Certifications_custExpirationDate": "",
-	# "detail_gridUDCol_Employees_Certifications_CustNoExpiration": "",
-	# "detail_Education_Degree": "",
-	# "detail_Education_Specialty": "",
-	# "detail_Education_Institution": "",
-	# "detail_Education_Year": "",
-	# "Design and Inspection Resume": "",
-	# "detail_level": ""
-}
+
 
 for element in section[:]:
-	for key in employeeInfo:
+	for key in Employee.detailKey:
 		if element.getAttribute(key):
-			sasherBio.bioDataProcessor(element.getAttribute(key), key)
+			SasherBio.bioDataProcessor(element.getAttribute(key), key)
 			# appendStr(element.getAttribute(key), employeeInfo[key][0], employeeInfo[key][1]) #This is where data processing function is called.
 
-sasherBio.calculateYearsExp()
+SasherBio.calculateYearsExp()
 
-print(sasherBio.data)
+Sasher.bioData = SasherBio.data
+
+print(Sasher.bioData)
 
 
 # with open('employeeInfo.csv', 'w') as csvfile:
