@@ -23,11 +23,11 @@ section = mydoc.getElementsByTagName('Detail')
 
 def appendStr(val, field, dataType):
 	if dataType == "int":
-		employee[field] = int(val)
+		bio[field] = int(val)
 	elif dataType == "hireDate":
-		employee[field] = formatDate(val) #Calculates date when called
+		bio[field] = formatDate(val) #Calculates date when called
 	elif dataType == "str":
-		employee[field].append(val)
+		bio[field].append(val)
 	elif dataType == "lic":
 		if field == "dateEarned":
 			newLicense[field] = formatDate(val)
@@ -37,7 +37,7 @@ def appendStr(val, field, dataType):
 			newLicense[field] = val
 		elif field == "dateExpired":
 			newLicense[field] == formatDate(val)
-			employee["licenses"].update({ newLicense["state"] + str(newLicense["number"]) : newLicense  })
+			bio["licenses"].update({ newLicense["state"] + str(newLicense["number"]) : newLicense  })
 
 		
 
@@ -50,14 +50,52 @@ def calculateYearsBetween(startDate):
 def formatDate(date):
 	return datetime.strptime(date.rstrip("T00:00:00"), '%Y-%m-%d').date()
 
-employee = {
-	"name": [],
-	"title": [],
-	"hireDate": 0,
-	"priorYearsFirm": 0,
-	"priorYearsOther": 0,
-	"licenses": {}, 
-}
+#base class Employee
+
+# class Employee:
+# 	def __init__(self, bio, licnses, courses, certs, education, projects)
+
+
+class Bio:
+	"""Class for handling bio information for each employee"""
+	def __init__(self):
+		self.data = {
+			"name": "", 
+			"nameSuffix": "",											#could split between first last and include preffered too
+			"title": "",
+			"hireDate": 0,
+			"priorYearsFirm": 0,
+			"priorYearsOther": 0
+		}
+
+	bioKey = {
+		"DetailField_FullName_Section_1": ["name", "str"],
+		"DetailField_Title_Section_1": ["title", "str"],
+		"DetailField_HireDate_Section_1": ["hireDate", "hireDate"],
+		"DetailField_PriorYearsFirm_Section_1": ["priorYearsFirm", "int"], 
+		"DetailField_YearsOtherFirms_Section_1": ["priorYearsOther", "int"], 
+		"DetailField_Suffix_Section_1": ["nameSuffix", "str"] 
+
+	}
+
+	def bioDataProcessor(self, val, tagName):
+		if self.bioKey[tagName][1] == "hireDate":
+			self.data[self.bioKey[tagName][0]] = formatDate(val)
+		elif self.bioKey[tagName][1] == "int":
+			self.data[self.bioKey[tagName][0]] = int(val)
+		elif self.bioKey[tagName][1] == "str":
+			self.data[self.bioKey[tagName][0]] = val
+
+		# print(val, self.bioKey[info]) 
+
+	# "totalYearsExp": calculateYearsExp(self, self.hireDate)
+
+	def calculateYearsExp(self):
+		today = datetime.now()
+		difference = relativedelta.relativedelta(today, self.data["hireDate"]).years
+		self.data["totalYearsExp"] = (difference + self.data["priorYearsFirm"] + self.data["priorYearsOther"])
+
+sasherBio = Bio()
 
 newLicense = {
 	"number": 0, 
@@ -81,7 +119,7 @@ newCert = {
 	"expires": True #optional
 }
 
-newDegree {
+newDegree = {
 	"degree": "",
 	"specialty": "",
 	"school": "",
@@ -89,16 +127,17 @@ newDegree {
 }
 
 employeeInfo = {
-	"DetailField_FullName_Section_1": ["name", "str"],
-	"DetailField_Title_Section_1": ["title", "str"],
-	"DetailField_HireDate_Section_1": ["hireDate", "hireDate"],
-	"DetailField_PriorYearsFirm_Section_1": ["priorYearsFirm", "int"], 
-	"DetailField_YearsOtherFirms_Section_1": ["priorYearsOther", "int"],
-	"detail_Licenses_License" : ["type", "lic"],
-	"detail_Licenses_Earned": ["dateEarned", "lic"],
-	"detail_Licenses_State": ["state", "lic"],
-	"detail_Licenses_Number": ["number", "lic"],
-	"detail_Licenses_Expires": ["dateExpired", "lic"], #Hook to signal end of newLicense object
+	"DetailField_FullName_Section_1": "bio",
+	"DetailField_Title_Section_1": "bio",
+	"DetailField_HireDate_Section_1": "bio",
+	"DetailField_PriorYearsFirm_Section_1": "bio", 
+	"DetailField_YearsOtherFirms_Section_1": "bio",
+	"DetailField_Suffix_Section_1": "bio"
+	# "detail_Licenses_License" : ["type", "lic"],
+	# "detail_Licenses_Earned": ["dateEarned", "lic"],
+	# "detail_Licenses_State": ["state", "lic"],
+	# "detail_Licenses_Number": ["number", "lic"],
+	# "detail_Licenses_Expires": ["dateExpired", "lic"], #Hook to signal end of newLicense object
 	# "detail_gridUDCol_Employees_Courses_custAgency": "", #Need to rewrite to accept multiple courses and certs
 	# "detail_gridUDCol_Employees_Courses_custCourseName": "",
 	# "detail_gridUDCol_Employees_Courses_custDate": "",
@@ -115,22 +154,15 @@ employeeInfo = {
 	# "detail_level": ""
 }
 
-
 for element in section[:]:
 	for key in employeeInfo:
 		if element.getAttribute(key):
-			appendStr(element.getAttribute(key), employeeInfo[key][0], employeeInfo[key][1])
+			sasherBio.bioDataProcessor(element.getAttribute(key), key)
+			# appendStr(element.getAttribute(key), employeeInfo[key][0], employeeInfo[key][1]) #This is where data processing function is called.
 
-# yearsAtConsor = calculateYearsBetween(employee["hireDate"])
+sasherBio.calculateYearsExp()
 
-
-
-employee.update({"yearsAtConsor": calculateYearsBetween(employee["hireDate"])}) #update employee with years at consor number
-
-employee.update({"totalYearsExp": employee["yearsAtConsor"] + employee["priorYearsOther"] + employee["priorYearsFirm"]})
-
-
-print(employee["licenses"]["FL74796"]["dateEarned"])
+print(sasherBio.data)
 
 
 # with open('employeeInfo.csv', 'w') as csvfile:
