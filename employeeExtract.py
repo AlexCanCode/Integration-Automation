@@ -22,6 +22,8 @@ section = mydoc.getElementsByTagName('Detail')
 # - Calculate the right licnese to use
 # - to accept multiple courses and certs
 # - Improvement: Take list of their projects and determine what title has been used most and apply that one
+# implement an optional y/n boolean for a prefferred name or a middle name situation. IMplement logic to resolve to the right name
+# Split name into first last and middle - concat based on the previous todo (first + Last + Suffix for most) 
 
 with open('employeeInfo.csv', 'w', newline='') as csvfile:
 	fieldnames = ["name", "nameSuffix", "title", "hireDate", "priorYearsFirm", "priorYearsOther", "hireDate", "priorYearsFirm", "priorYearsOther", "licenses", "courses", "certifications", "education", "resumeIntro", "totalYearsExp"]
@@ -43,11 +45,12 @@ class Employee:
 			"hireDate": 0,
 			"priorYearsFirm": 0,
 			"priorYearsOther": 0,
-			"licenses": [], # TO -DO SHOULD MAKE EACH OF THESE A DICTIONARY THAT ASSIGNS THE DATA TYPE (even if its just in the xml tag format) to each so that it can be easily processed and seperated into easier to use formats. 
+			"licenses": {}, # TO -DO SHOULD MAKE EACH OF THESE A DICTIONARY THAT ASSIGNS THE DATA TYPE (even if its just in the xml tag format) to each so that it can be easily processed and seperated into easier to use formats. 
 			"courses": [],
 			"certifications": [], 
 			"education": [], 
-			"resumeIntro": []
+			"resumeIntro": [], 
+			"PELicenseCount": 0
 		}
 
 	detailKey = {
@@ -87,6 +90,14 @@ class Employee:
 		"DetailField_Suffix_Section_1": ["nameSuffix", "str"] 
 	}
 
+	objectKey = {
+		"detail_Licenses_License": "type",
+		"detail_Licenses_Earned": "dateEarned",
+		"detail_Licenses_State": "state",
+		"detail_Licenses_Number": "number",
+		"detail_Licenses_Expires":  "dateExpire",
+	}
+
 	def formatData(self, data, dataType):
 		if dataType == "int":
 			return int(data)
@@ -120,6 +131,17 @@ class Employee:
 
 allEmployees = dict()
 
+class License: 
+	"""Class for each individual license - will format itself properly"""
+	def __init__(self):
+		self.data = {
+			"type": "",
+			"dateEarned": 0, 
+			"state": "",
+			"number": 0,
+			"dateExpire": 0
+		}
+
 newCourse = {
 	"agency": "",
 	"name": "",
@@ -141,7 +163,6 @@ newDegree = {
 	"gradYear": 0
 }
 
-
 # To do - make this switch nonsense more sane 
 for element in section[:]:
 	for key in Employee.detailKey:
@@ -150,9 +171,14 @@ for element in section[:]:
 				objectName = element.getAttribute(key)
 				allEmployees[objectName] = Employee(objectName)
 			if Employee.detailKey[key] == "bio":
-				allEmployees[objectName].bioDataProcessor(element.getAttribute(key), key) # LEFT OFF - this function needs to be dynamic and needs to be able to recognize each object that it needs to be delegated too. 
+				allEmployees[objectName].bioDataProcessor(element.getAttribute(key), key)
 			if Employee.detailKey[key] == "lic":
-				allEmployees[objectName].data["licenses"].append(element.getAttribute(key)) 
+				if Employee.objectKey[key] == "type": # Creates new license each time "type" is encountered after "lic" creating new license based on the counter. Yes this is messy and needs to be refactored
+					allEmployees[objectName].data["PELicenseCount"] += 1
+					allEmployees[objectName].data["licenses"][allEmployees[objectName].data["PELicenseCount"]] = License()
+					allEmployees[objectName].data["licenses"][allEmployees[objectName].data["PELicenseCount"]].data[Employee.objectKey[key]] = element.getAttribute(key)	
+
+				allEmployees[objectName].data["licenses"][allEmployees[objectName].data["PELicenseCount"]].data[Employee.objectKey[key]] = element.getAttribute(key)	
 			if Employee.detailKey[key] == "cor":
 				allEmployees[objectName].data["courses"].append(element.getAttribute(key))
 			if Employee.detailKey[key] == "cert":
@@ -162,8 +188,10 @@ for element in section[:]:
 			if Employee.detailKey[key] == "res":
 				allEmployees[objectName].data["resumeIntro"].append(element.getAttribute(key)) 
 
-for worker in allEmployees:
-	print(allEmployees[worker].data)
+x = allEmployees["James Ikaika Kincaid PE"].data["licenses"]
+
+for j in x: 
+	print(x[j].data)
 
 # employeeData = Worker.data
 
