@@ -23,6 +23,10 @@ section = mydoc.getElementsByTagName('Detail')
 # - to accept multiple courses and certs
 # - Improvement: Take list of their projects and determine what title has been used most and apply that one
 
+with open('employeeInfo.csv', 'w', newline='') as csvfile:
+	fieldnames = ["name", "nameSuffix", "title", "hireDate", "priorYearsFirm", "priorYearsOther", "hireDate", "priorYearsFirm", "priorYearsOther", "licenses", "courses", "certifications", "education", "resumeIntro", "totalYearsExp"]
+	writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+	writer.writeheader()
 
 
 def formatDate(date):
@@ -32,10 +36,22 @@ def formatDate(date):
 class Employee:
 	"""Base Class for all employees, used to write each csv row"""
 	def __init__(self):
-		self.bioData = None
+		self.data = {
+			"name": "", #could split between first last and include preffered too
+			"nameSuffix": "",							
+			"title": "",
+			"hireDate": 0,
+			"priorYearsFirm": 0,
+			"priorYearsOther": 0,
+			"licenses": [], # TO -DO SHOULD MAKE EACH OF THESE A DICTIONARY THAT ASSIGNS THE DATA TYPE (even if its just in the xml tag format) to each so that it can be easily processed and seperated into easier to use formats. 
+			"courses": [],
+			"certifications": [], 
+			"education": [], 
+			"resumeIntro": []
+		}
 
 	detailKey = {
-		"DetailField_FullName_Section_1": "bio",
+		"DetailField_FullName_Section_1": "hook",
 		"DetailField_Title_Section_1": "bio",
 		"DetailField_HireDate_Section_1": "bio",
 		"DetailField_PriorYearsFirm_Section_1": "bio", 
@@ -62,31 +78,7 @@ class Employee:
 		"detail_level": "res"
 	}
 
-	def formatData(self, data, dataType):
-		if dataType == "int":
-			return int(data)
-		elif dataType == "date":
-			return formatDate(data)
-		return data
-
-class Bio(Employee): 
-	"""Class for handling bio information for each employee. Calculates tota; years exp"""
-	def __init__(self):
-		self.data = {
-			"name": "", #could split between first last and include preffered too
-			"nameSuffix": "",							
-			"title": "",
-			"hireDate": 0,
-			"priorYearsFirm": 0,
-			"priorYearsOther": 0,
-			"licenses": [], # TO -DO SHOULD MAKE EACH OF THESE A DICTIONARY THAT ASSIGNS THE DATA TYPE (even if its just in the xml tag format) to each so that it can be easily processed and seperated into easier to use formats. 
-			"courses": [],
-			"certifications": [], 
-			"education": [], 
-			"resumeIntro": []
-		}
-
-	bioKey = {
+	dataKey = {
 		"DetailField_FullName_Section_1": ["name", "str"],
 		"DetailField_Title_Section_1": ["title", "str"],
 		"DetailField_HireDate_Section_1": ["hireDate", "date"],
@@ -95,11 +87,18 @@ class Bio(Employee):
 		"DetailField_Suffix_Section_1": ["nameSuffix", "str"] 
 	}
 
-	def bioDataProcessor(self, val, tagName):
-		dataType = self.bioKey[tagName][1]
-		formattedData = self.formatData(val, dataType)  #Functioned derrived from base class Employee
-		self.data[self.bioKey[tagName][0]] = formattedData
+	def formatData(self, data, dataType):
+		if dataType == "int":
+			return int(data)
+		elif dataType == "date":
+			return formatDate(data)
+		return data
 
+
+	def bioDataProcessor(self, val, tagName):
+		dataType = self.dataKey[tagName][1]
+		formattedData = self.formatData(val, dataType)  #Functioned derrived from base class Employee
+		self.data[self.dataKey[tagName][0]] = formattedData
 
 
 	def calculateYearsExp(self):
@@ -108,8 +107,10 @@ class Bio(Employee):
 		self.data["totalYearsExp"] = (difference + self.data["priorYearsFirm"] + self.data["priorYearsOther"])
 
 
-Sasher = Employee()
-SasherBio = Bio()
+Worker = Employee()
+
+
+allWorkers = dict()
 
 newCourse = {
 	"agency": "",
@@ -135,28 +136,33 @@ newDegree = {
 for element in section[:]:
 	for key in Employee.detailKey:
 		if element.getAttribute(key):
+			# if Employee.detailKey[key] == "hook":
+			# 	objectName = element.getAttribute(key)
+			# 	# Worker = Employee()
 			if Employee.detailKey[key] == "bio":
-				SasherBio.bioDataProcessor(element.getAttribute(key), key) # LEFT OFF - this function needs to be dynamic and needs to be able to recognize each object that it needs to be delegated too. 
+				Worker.bioDataProcessor(element.getAttribute(key), key) # LEFT OFF - this function needs to be dynamic and needs to be able to recognize each object that it needs to be delegated too. 
 			if Employee.detailKey[key] == "lic":
-				SasherBio.data["licenses"].append(element.getAttribute(key)) 
+				Worker.data["licenses"].append(element.getAttribute(key)) 
 			if Employee.detailKey[key] == "cor":
-				SasherBio.data["courses"].append(element.getAttribute(key))
+				Worker.data["courses"].append(element.getAttribute(key))
 			if Employee.detailKey[key] == "cert":
-				SasherBio.data["certifications"].append(element.getAttribute(key)) 
+				Worker.data["certifications"].append(element.getAttribute(key)) 
 			if Employee.detailKey[key] == "edu":
-				SasherBio.data["education"].append(element.getAttribute(key))
+				Worker.data["education"].append(element.getAttribute(key))
 			if Employee.detailKey[key] == "res":
-				SasherBio.data["resumeIntro"].append(element.getAttribute(key)) 
+				Worker.data["resumeIntro"].append(element.getAttribute(key)) 
 
-SasherBio.calculateYearsExp()
+Worker.calculateYearsExp()
 
-employeeData = SasherBio.data
+# employeeData = Worker.data
 
 # print(employeeData)
 
 
+# Write to iterate over the dictionary of workers 
+
 with open('employeeInfo.csv', 'w', newline='') as csvfile:
-	fieldnames = ["name", "nameSuffix", "title", "hireDate", "priorYearsFirm", "priorYearsOther", "hireDate", "priorYearsFirm", "priorYearsOther", "licenses", "courses", "certifications", "education", "resumeIntro", "totalYearsExp"]
+	fieldnames = ["name", "nameSuffix", "title", "hireDate", "priorYearsFirm", "priorYearsOther", "licenses", "courses", "certifications", "education", "resumeIntro", "totalYearsExp"]
 	writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-	writer.writeheader()
-	writer.writerow(employeeData)
+	writer.writerow(Worker.data)
+
