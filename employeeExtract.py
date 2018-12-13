@@ -25,6 +25,7 @@ section = mydoc.getElementsByTagName('Detail')
 # implement an optional y/n boolean for a prefferred name or a middle name situation. IMplement logic to resolve to the right name
 # Split name into first last and middle - concat based on the previous todo (first + Last + Suffix for most) 
 
+
 with open('employeeInfo.csv', 'w', newline='') as csvfile:
 	fieldnames = ["name", "nameSuffix", "title", "hireDate", "priorYearsFirm", "priorYearsOther", "hireDate", "priorYearsFirm", "priorYearsOther", "licenses", "courses", "certifications", "education", "resumeIntro", "totalYearsExp"]
 	writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -45,12 +46,15 @@ class Employee:
 			"hireDate": 0,
 			"priorYearsFirm": 0,
 			"priorYearsOther": 0,
-			"licenses": {}, # TO -DO SHOULD MAKE EACH OF THESE A DICTIONARY THAT ASSIGNS THE DATA TYPE (even if its just in the xml tag format) to each so that it can be easily processed and seperated into easier to use formats. 
+			"licenses": {}, # Write a function for employee to roll up all the displays for licenses into one string to put in csv
 			"courses": [],
 			"certifications": [], 
 			"education": [], 
 			"resumeIntro": [], 
-			"PELicenseCount": 0
+			"PELicenseCount": 0, 
+			"courseCount": 0,
+			"certCount": 0, 
+			"degreeCount": 0
 		}
 
 	detailKey = {
@@ -118,20 +122,9 @@ class Employee:
 		self.data["totalYearsExp"] = (difference + self.data["priorYearsFirm"] + self.data["priorYearsOther"])
 
 
-# Worker = Employee()
-
-# UES INPUT LIKE THIS? TO FORMAT DATA THAT HAS MULTIPLE ITERATIONS OF Each (e.g. License) 
-    # def add_license(self, info1, info2, info3, info4):
-    #     self.info1 = info1
-    #     self.zip = info2
-    #     self.info3 = info3
-    #     self.info4 = info4
-
-    #But remember that scope will be a factor and you need to deal with potential non-inputs - look into best way to perform these kinds of nests
-
 allEmployees = dict()
 
-class License: 
+class License(Employee): 
 	"""Class for each individual license - will format itself properly"""
 	def __init__(self):
 		self.data = {
@@ -141,6 +134,37 @@ class License:
 			"number": 0,
 			"dateExpire": 0
 		}
+		self.isMain = False
+		self.isExpired = False
+		self.displayString = None 
+
+	def formatLicense(self):
+		print(self.data)
+
+	def formatType(self, licType):
+		if licType == "Professional Engineer":
+			return "PE"
+		elif licType == "Engineer Intern":
+			return "EI"
+		elif licType == "Engineer In Training":
+			return "EIT"
+
+	def getLicenseResumeFormat(self): #This will omit license with no expiration... Consider implications 
+		# 1. check for expiration
+		# 2. check if it is main (in the state where they live)
+		# 3. return State (+ number if main (or only one))   - TO GET HOME STATE - need to grab tag "MainTable_CRM" and get all meta date. Could do the object creation for each this way and then match the first hook (full name) with the full name from the MainTable_CRM as I believe they will always be the same. Or accept User input for main license 
+
+		if self.data["dateExpire"] == 0:
+			return
+		today = datetime.now().date()
+		if today > formatDate(self.data["dateExpire"]):
+			print(self.data["state"] + " License is expired for ") #Get employee name to make this a more useful error
+		elif today < formatDate(self.data["dateExpire"]):
+			# if self.isMain == True:
+			# 	self.displayString = self.data["state"] + " #" + self.data["number"]
+			self.displayString = self.data["state"] + " "
+		
+
 
 newCourse = {
 	"agency": "",
@@ -191,7 +215,14 @@ for element in section[:]:
 x = allEmployees["James Ikaika Kincaid PE"].data["licenses"]
 
 for j in x: 
+	x[j].getLicenseResumeFormat()
 	print(x[j].data)
+	print(x[j].displayString)
+
+
+
+
+
 
 # employeeData = Worker.data
 
