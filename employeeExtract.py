@@ -57,6 +57,8 @@ class Employee:
 			"degreeCount": 0
 		}
 
+		self.licenseDisplay = ""
+
 	detailKey = {
 		"DetailField_FullName_Section_1": "hook",
 		"DetailField_Title_Section_1": "bio",
@@ -121,6 +123,12 @@ class Employee:
 		difference = relativedelta.relativedelta(today, self.data["hireDate"]).years
 		self.data["totalYearsExp"] = (difference + self.data["priorYearsFirm"] + self.data["priorYearsOther"])
 
+	def rollupLicenses(self):
+		for license in self.data["licenses"]:
+			if self.data["licenses"][license].displayString == None:
+				return
+			self.licenseDisplay += self.data["licenses"][license].displayString
+
 
 allEmployees = dict()
 
@@ -160,9 +168,9 @@ class License(Employee):
 		if today > formatDate(self.data["dateExpire"]):
 			print(self.data["state"] + " License is expired for ") #Get employee name to make this a more useful error
 		elif today < formatDate(self.data["dateExpire"]):
-			# if self.isMain == True:
-			# 	self.displayString = self.data["state"] + " #" + self.data["number"]
-			self.displayString = self.data["state"] + " "
+			if self.isMain == True:
+				self.displayString = self.data["state"] + " #" + self.data["number"]
+			self.displayString = self.data["state"] + ", "
 		
 
 
@@ -212,12 +220,20 @@ for element in section[:]:
 			if Employee.detailKey[key] == "res":
 				allEmployees[objectName].data["resumeIntro"].append(element.getAttribute(key)) 
 
-x = allEmployees["James Ikaika Kincaid PE"].data["licenses"]
+# Loop to execute for each license
+for emp in allEmployees:
+	for license in allEmployees[emp].data["licenses"]:
+		allEmployees[emp].data["licenses"][license].getLicenseResumeFormat()
 
-for j in x: 
-	x[j].getLicenseResumeFormat()
-	print(x[j].data)
-	print(x[j].displayString)
+
+for emp in allEmployees:
+	allEmployees[emp].rollupLicenses()
+# allEmployees["James Ikaika Kincaid PE"].rollupLicenses()
+
+for emp in allEmployees:
+	print(allEmployees[emp].licenseDisplay)
+
+
 
 
 
