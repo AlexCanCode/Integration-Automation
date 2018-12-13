@@ -5,7 +5,7 @@ import csv
 
 # SEE LINE 99 for to do item
 
-mydoc = minidom.parse('kincaid.xml')
+mydoc = minidom.parse('combinedTest.xml')
 
 section = mydoc.getElementsByTagName('Detail')
 
@@ -35,9 +35,9 @@ def formatDate(date):
 #base class Employee
 class Employee:
 	"""Base Class for all employees, used to write each csv row"""
-	def __init__(self):
+	def __init__(self, name):
 		self.data = {
-			"name": "", #could split between first last and include preffered too
+			"name": name,
 			"nameSuffix": "",							
 			"title": "",
 			"hireDate": 0,
@@ -75,10 +75,10 @@ class Employee:
 		"detail_Education_Institution": "edu",
 		"detail_Education_Year": "edu",
 		# "Design and Inspection Resume": "",
-		"detail_level": "res"
+		# "detail_level": "res" #Shows up first but serves as a poor hook
 	}
 
-	dataKey = {
+	dataKey = { #need to add other fields
 		"DetailField_FullName_Section_1": ["name", "str"],
 		"DetailField_Title_Section_1": ["title", "str"],
 		"DetailField_HireDate_Section_1": ["hireDate", "date"],
@@ -107,10 +107,18 @@ class Employee:
 		self.data["totalYearsExp"] = (difference + self.data["priorYearsFirm"] + self.data["priorYearsOther"])
 
 
-Worker = Employee()
+# Worker = Employee()
 
+# UES INPUT LIKE THIS? TO FORMAT DATA THAT HAS MULTIPLE ITERATIONS OF Each (e.g. License) 
+    # def add_license(self, info1, info2, info3, info4):
+    #     self.info1 = info1
+    #     self.zip = info2
+    #     self.info3 = info3
+    #     self.info4 = info4
 
-allWorkers = dict()
+    #But remember that scope will be a factor and you need to deal with potential non-inputs - look into best way to perform these kinds of nests
+
+allEmployees = dict()
 
 newCourse = {
 	"agency": "",
@@ -133,26 +141,29 @@ newDegree = {
 	"gradYear": 0
 }
 
+
+# To do - make this switch nonsense more sane 
 for element in section[:]:
 	for key in Employee.detailKey:
 		if element.getAttribute(key):
-			# if Employee.detailKey[key] == "hook":
-			# 	objectName = element.getAttribute(key)
-			# 	# Worker = Employee()
+			if Employee.detailKey[key] == "hook":
+				objectName = element.getAttribute(key)
+				allEmployees[objectName] = Employee(objectName)
 			if Employee.detailKey[key] == "bio":
-				Worker.bioDataProcessor(element.getAttribute(key), key) # LEFT OFF - this function needs to be dynamic and needs to be able to recognize each object that it needs to be delegated too. 
+				allEmployees[objectName].bioDataProcessor(element.getAttribute(key), key) # LEFT OFF - this function needs to be dynamic and needs to be able to recognize each object that it needs to be delegated too. 
 			if Employee.detailKey[key] == "lic":
-				Worker.data["licenses"].append(element.getAttribute(key)) 
+				allEmployees[objectName].data["licenses"].append(element.getAttribute(key)) 
 			if Employee.detailKey[key] == "cor":
-				Worker.data["courses"].append(element.getAttribute(key))
+				allEmployees[objectName].data["courses"].append(element.getAttribute(key))
 			if Employee.detailKey[key] == "cert":
-				Worker.data["certifications"].append(element.getAttribute(key)) 
+				allEmployees[objectName].data["certifications"].append(element.getAttribute(key)) 
 			if Employee.detailKey[key] == "edu":
-				Worker.data["education"].append(element.getAttribute(key))
+				allEmployees[objectName].data["education"].append(element.getAttribute(key))
 			if Employee.detailKey[key] == "res":
-				Worker.data["resumeIntro"].append(element.getAttribute(key)) 
+				allEmployees[objectName].data["resumeIntro"].append(element.getAttribute(key)) 
 
-Worker.calculateYearsExp()
+for worker in allEmployees:
+	print(allEmployees[worker].data)
 
 # employeeData = Worker.data
 
@@ -161,8 +172,8 @@ Worker.calculateYearsExp()
 
 # Write to iterate over the dictionary of workers 
 
-with open('employeeInfo.csv', 'w', newline='') as csvfile:
-	fieldnames = ["name", "nameSuffix", "title", "hireDate", "priorYearsFirm", "priorYearsOther", "licenses", "courses", "certifications", "education", "resumeIntro", "totalYearsExp"]
-	writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-	writer.writerow(Worker.data)
+# with open('employeeInfo.csv', 'w', newline='') as csvfile:
+# 	fieldnames = ["name", "nameSuffix", "title", "hireDate", "priorYearsFirm", "priorYearsOther", "licenses", "courses", "certifications", "education", "resumeIntro", "totalYearsExp"]
+# 	writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+# 	writer.writerow(Worker.data)
 
