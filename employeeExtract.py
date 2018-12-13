@@ -5,7 +5,7 @@ import csv
 
 # SEE LINE 99 for to do item
 
-mydoc = minidom.parse('combinedTest.xml')
+mydoc = minidom.parse('allwithlicense2.xml')
 
 section = mydoc.getElementsByTagName('Detail')
 
@@ -58,6 +58,7 @@ class Employee:
 		}
 
 		self.licenseDisplay = ""
+		self.courseDisplay = ""
 
 	detailKey = {
 		"DetailField_FullName_Section_1": "hook",
@@ -102,6 +103,10 @@ class Employee:
 		"detail_Licenses_State": "state",
 		"detail_Licenses_Number": "number",
 		"detail_Licenses_Expires":  "dateExpire",
+		"detail_gridUDCol_Employees_Courses_custAgency": "agency", 
+		"detail_gridUDCol_Employees_Courses_custCourseName": "name",
+		"detail_gridUDCol_Employees_Courses_custDate": "dateTaken",
+		"detail_gridUDCol_Employees_Courses_custCourseNumber": "number",
 	}
 
 	def formatData(self, data, dataType):
@@ -157,7 +162,7 @@ class License(Employee):
 		elif licType == "Engineer In Training":
 			return "EIT"
 
-	def getLicenseResumeFormat(self): #This will omit license with no expiration... Consider implications 
+	def getLicenseResumeFormat(self): #This will omit licenses with no expiration... Consider implications 
 		# 1. check for expiration
 		# 2. check if it is main (in the state where they live)
 		# 3. return State (+ number if main (or only one))   - TO GET HOME STATE - need to grab tag "MainTable_CRM" and get all meta date. Could do the object creation for each this way and then match the first hook (full name) with the full name from the MainTable_CRM as I believe they will always be the same. Or accept User input for main license 
@@ -166,20 +171,24 @@ class License(Employee):
 			return
 		today = datetime.now().date()
 		if today > formatDate(self.data["dateExpire"]):
-			print(self.data["state"] + " License is expired for ") #Get employee name to make this a more useful error
+			return self.data["state"] + " License is expired for " #Get employee name to make this a more useful error
 		elif today < formatDate(self.data["dateExpire"]):
 			if self.isMain == True:
 				self.displayString = self.data["state"] + " #" + self.data["number"]
 			self.displayString = self.data["state"] + ", "
 		
+class Course(Employee):
 
+	def __init__(self):
+		self.data = {
+			"agency": "",
+			"name": "",
+			"dateTaken": 0,
+			"number": 0
+		}
+		self.isExpired: False
+		self.displayString: None
 
-newCourse = {
-	"agency": "",
-	"name": "",
-	"dateTaken": 0,
-	"number": 0
-}
 
 newCert = {
 	"agency": "",
@@ -200,7 +209,7 @@ for element in section[:]:
 	for key in Employee.detailKey:
 		if element.getAttribute(key):
 			if Employee.detailKey[key] == "hook":
-				objectName = element.getAttribute(key)
+				objectName = element.getAttribute(key) 
 				allEmployees[objectName] = Employee(objectName)
 			if Employee.detailKey[key] == "bio":
 				allEmployees[objectName].bioDataProcessor(element.getAttribute(key), key)
@@ -212,7 +221,18 @@ for element in section[:]:
 
 				allEmployees[objectName].data["licenses"][allEmployees[objectName].data["PELicenseCount"]].data[Employee.objectKey[key]] = element.getAttribute(key)	
 			if Employee.detailKey[key] == "cor":
-				allEmployees[objectName].data["courses"].append(element.getAttribute(key))
+				# if Employee.objectKey[key] == "agency":
+				# 	allEmployees[objectName].data["courseCount"] += 1
+				# 	allEmployees[objectName].data["courses"][allEmployees[objectName].data["courseCount"]] = Course()
+				# 	allEmployees[objectName].data["courses"][allEmployees[objectName].data["courseCount"]].data[Employee.objectKey[key]] = element.getAttribute(key)
+				# #need to deal with instances where the agency is blank - need to
+				# # 1. recognize that and object already exists and needs to be iterated 
+				# # 2. Iterate the counter
+				# # 3. Create the new course object
+				# # 4. set up watching for when it changes
+
+				# allEmployees[objectName].data["courses"][allEmployees[objectName].data["courseCount"]].data[Employee.objectKey[key]] = element.getAttribute(key)
+				allEmployees[objectName].data["courses"].append(element.getAttribute(key)) 
 			if Employee.detailKey[key] == "cert":
 				allEmployees[objectName].data["certifications"].append(element.getAttribute(key)) 
 			if Employee.detailKey[key] == "edu":
@@ -225,18 +245,16 @@ for emp in allEmployees:
 	for license in allEmployees[emp].data["licenses"]:
 		allEmployees[emp].data["licenses"][license].getLicenseResumeFormat()
 
-
+# Rollup licenses for employee
 for emp in allEmployees:
 	allEmployees[emp].rollupLicenses()
-# allEmployees["James Ikaika Kincaid PE"].rollupLicenses()
+
 
 for emp in allEmployees:
 	print(allEmployees[emp].licenseDisplay)
 
-
-
-
-
+# 	for course in allEmployees[emp].data["courses"]:
+# 		print(allEmployees[emp].data["courses"][course].data)
 
 
 
