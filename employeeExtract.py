@@ -3,6 +3,8 @@ from datetime import datetime
 from dateutil import relativedelta
 import csv
 
+# SEE LINE 99 for to do item
+
 mydoc = minidom.parse('kincaid.xml')
 
 section = mydoc.getElementsByTagName('Detail')
@@ -19,25 +21,8 @@ section = mydoc.getElementsByTagName('Detail')
 # 	- Write funciton to calculate years of expierence date
 # - Calculate the right licnese to use
 # - to accept multiple courses and certs
-# - NOTE - IN ORDER TO MAKE LICENSE AND COURSES WORK - you gotta learn how to define classes so that you can have empty variables of them. Pointers are the issue here
+# - Improvement: Take list of their projects and determine what title has been used most and apply that one
 
-def appendStr(val, field, dataType):
-	if dataType == "int":
-		bio[field] = int(val)
-	elif dataType == "hireDate":
-		bio[field] = formatDate(val) #Calculates date when called
-	elif dataType == "str":
-		bio[field].append(val)
-	elif dataType == "lic":
-		if field == "dateEarned":
-			newLicense[field] = formatDate(val)
-		elif field == "number":
-			newLicense[field] = int(val)
-		elif field == "type" or field == "state":
-			newLicense[field] = val
-		elif field == "dateExpired":
-			newLicense[field] == formatDate(val)
-			bio["licenses"].update({ newLicense["state"] + str(newLicense["number"]) : newLicense  })
 
 
 def formatDate(date):
@@ -60,8 +45,8 @@ class Employee:
 		"detail_Licenses_Earned": "lic",
 		"detail_Licenses_State": "lic",
 		"detail_Licenses_Number": "lic",
-		"detail_Licenses_Expires":  "lic", #Hook to signal end of newLicense object
-		"detail_gridUDCol_Employees_Courses_custAgency": "cor", #Need to rewrite to accept multiple courses and certs
+		"detail_Licenses_Expires":  "lic", 
+		"detail_gridUDCol_Employees_Courses_custAgency": "cor", 
 		"detail_gridUDCol_Employees_Courses_custCourseName": "cor",
 		"detail_gridUDCol_Employees_Courses_custDate": "cor",
 		"detail_gridUDCol_Employees_Courses_custCourseNumber": "cor",
@@ -74,7 +59,7 @@ class Employee:
 		"detail_Education_Institution": "edu",
 		"detail_Education_Year": "edu",
 		# "Design and Inspection Resume": "",
-		# "detail_level": ""
+		"detail_level": "res"
 	}
 
 	def formatData(self, data, dataType):
@@ -94,10 +79,11 @@ class Bio(Employee):
 			"hireDate": 0,
 			"priorYearsFirm": 0,
 			"priorYearsOther": 0,
-			"licenses": [],
+			"licenses": [], # TO -DO SHOULD MAKE EACH OF THESE A DICTIONARY THAT ASSIGNS THE DATA TYPE (even if its just in the xml tag format) to each so that it can be easily processed and seperated into easier to use formats. 
 			"courses": [],
 			"certifications": [], 
-			"education": []
+			"education": [], 
+			"resumeIntro": []
 		}
 
 	bioKey = {
@@ -121,30 +107,6 @@ class Bio(Employee):
 		difference = relativedelta.relativedelta(today, self.data["hireDate"]).years
 		self.data["totalYearsExp"] = (difference + self.data["priorYearsFirm"] + self.data["priorYearsOther"])
 
-class License(Bio):
-
-	def __init__(self):
-		self.licenseData = {
-			"number": 0, 
-			"type": "",
-			"dateEarned": 0,
-			"dateExpired": 0,
-			"state": "",
-			"proposalUse": False
-		}
-
-	licneseKey = {
-		"detail_Licenses_License": ["type", "lic"],
-		"detail_Licenses_Earned": ["dateEarned", "lic"],
-		"detail_Licenses_State": ["state", "lic"],
-		"detail_Licenses_Number": ["number", "lic"],
-		"detail_Licenses_Expires": ["dateExpired", "lic"], 
-	}
-
-	def licenseDataProcessor(self, val, tagName):
-		dataType = self.licneseKey[tagName][1]
-		formattedData = self.formatData(val, dataType)  #Functioned derrived from base class Employee
-		self.licenseData[self.licneseKey[tagName][0]] = formattedData
 
 Sasher = Employee()
 SasherBio = Bio()
@@ -170,8 +132,6 @@ newDegree = {
 	"gradYear": 0
 }
 
-
-
 for element in section[:]:
 	for key in Employee.detailKey:
 		if element.getAttribute(key):
@@ -184,17 +144,19 @@ for element in section[:]:
 			if Employee.detailKey[key] == "cert":
 				SasherBio.data["certifications"].append(element.getAttribute(key)) 
 			if Employee.detailKey[key] == "edu":
-				SasherBio.data["education"].append(element.getAttribute(key)) 
+				SasherBio.data["education"].append(element.getAttribute(key))
+			if Employee.detailKey[key] == "res":
+				SasherBio.data["resumeIntro"].append(element.getAttribute(key)) 
 
 SasherBio.calculateYearsExp()
 
-Sasher.bioData = SasherBio.data
+employeeData = SasherBio.data
 
-print(Sasher.bioData)
+# print(employeeData)
 
 
-# with open('employeeInfo.csv', 'w') as csvfile:
-# 	fieldnames = ["DetailField_FullName_Section_1", "DetailField_Title_Section_1", "DetailField_HireDate_Section_1", "DetailField_PriorYearsFirm_Section_1", "DetailField_YearsOtherFirms_Section_1", "detail_Licenses_License", "detail_Licenses_Earned", "detail_Licenses_State", "detail_Licenses_Number", "detail_Licenses_Expires", "detail_gridUDCol_Employees_Courses_custAgency", "detail_gridUDCol_Employees_Courses_custCourseName", "detail_gridUDCol_Employees_Courses_custDate", "detail_gridUDCol_Employees_Courses_custCourseNumber", "detail_gridUDCol_Employees_Certifications_custCertAgency", "detail_gridUDCol_Employees_Certifications_custCertNumber", "detail_gridUDCol_Employees_Certifications_custExpirationDate", "detail_gridUDCol_Employees_Certifications_CustNoExpiration", "detail_Education_Degree", "detail_Education_Specialty", "detail_Education_Institution", "detail_Education_Year", "Design and Inspection Resume", "detail_level"]
-# 	writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-# 	writer.writeheader()
-# 	writer.writerow(employeeInfo)
+with open('employeeInfo.csv', 'w', newline='') as csvfile:
+	fieldnames = ["name", "nameSuffix", "title", "hireDate", "priorYearsFirm", "priorYearsOther", "hireDate", "priorYearsFirm", "priorYearsOther", "licenses", "courses", "certifications", "education", "resumeIntro", "totalYearsExp"]
+	writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+	writer.writeheader()
+	writer.writerow(employeeData)
