@@ -55,6 +55,7 @@ class Employee:
 			"priorYearsOther": 0,
 			"licenses": {}, # Write a function for employee to roll up all the displays for licenses into one string to put in csv
 			"licenseDisplay": "",
+			"eduDisplay": "",
 			"courses": [],
 			"certifications": [], 
 			"education": {},
@@ -150,12 +151,10 @@ class Employee:
 		if self.data["licenseDisplay"].endswith(", "):
 			self.data["licenseDisplay"] = self.data["licenseDisplay"][: -2]
 
-	def formatEducation(self):
+	def rollupEducation(self):
 		for edu in self.data["education"]:
-			if representsInt(edu) == True:
-				edu += edu + '\n'
-				str1 = ", ".join(self.data["education"])
-				print(str1)
+			self.data["eduDisplay"] += self.data["education"][edu].displayString + "   "
+		print(self.data)
 
 
 
@@ -223,8 +222,10 @@ class Degree(Employee):
 			"gradYear": 0
 		}
 
+		self.displayString: None
 
-
+	def getEducationResumeFormat(self):
+		self.displayString = self.data["degree"] + ", " + self.data["specialty"] + ", " + self.data["school"] + ", " + self.data["gradYear"]
 
 
 newCert = {
@@ -284,15 +285,15 @@ for element in section[:]:
 
 # Loop to execute for each license
 for emp in allEmployees:
-	for license in allEmployees[emp].data["licenses"]:
-		allEmployees[emp].data["licenses"][license].getLicenseResumeFormat()
+	for edu in allEmployees[emp].data["education"]:
+		allEmployees[emp].data["education"][edu].getEducationResumeFormat()
 
 # Rollup licenses for employee
 for emp in allEmployees:
 	allEmployees[emp].rollupLicenses()
 	allEmployees[emp].calculateYearsExp()
 	allEmployees[emp].removeTrailingComma()
-	# allEmployees[emp].formatEducation()
+	allEmployees[emp].rollupEducation()
 
 
 # for emp in allEmployees:
@@ -311,7 +312,7 @@ for emp in allEmployees:
 # Write to iterate over the dictionary of workers 
 
 with open('employeeInfo.csv', 'w', newline='') as csvfile:
-	fieldnames = ["name", "nameSuffix", "title", "hireDate", "priorYearsFirm", "priorYearsOther", "licenseDisplay", "courses", "certifications", "education", "resumeIntro", "totalYearsExp", "degreeCount", "courseCount", "PELicenseCount", "certCount", "licenses"]
+	fieldnames = ["name", "nameSuffix", "title", "hireDate", "priorYearsFirm", "priorYearsOther", "licenseDisplay", "eduDisplay", "courses", "certifications", "resumeIntro", "totalYearsExp", "degreeCount", "courseCount", "PELicenseCount", "certCount", "licenses", "education"]
 	writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 	writer.writeheader()
 	for emp in allEmployees:
