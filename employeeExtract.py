@@ -153,8 +153,8 @@ class Employee:
 
 	def rollupEducation(self):
 		for edu in self.data["education"]:
-			self.data["eduDisplay"] += self.data["education"][edu].displayString + "   "
-		print(self.data)
+			self.data["eduDisplay"] += self.data["education"][edu].displayString + "   " #Need to make this a GREP searchabel expression to replace with a return line
+		print(self.data["courses"])
 
 
 
@@ -294,6 +294,7 @@ for emp in allEmployees:
 	allEmployees[emp].calculateYearsExp()
 	allEmployees[emp].removeTrailingComma()
 	allEmployees[emp].rollupEducation()
+
 
 
 # for emp in allEmployees:
