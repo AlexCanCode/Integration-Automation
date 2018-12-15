@@ -56,7 +56,9 @@ class Employee:
 			"licenses": {}, # Write a function for employee to roll up all the displays for licenses into one string to put in csv
 			"licenseDisplay": "",
 			"eduDisplay": "",
+			"courseDisplay": "",
 			"courses": [],
+			"courseObjects": {},
 			"certifications": [], 
 			"education": {},
 			"resumeIntro": [], 
@@ -154,8 +156,29 @@ class Employee:
 	def rollupEducation(self):
 		for edu in self.data["education"]:
 			self.data["eduDisplay"] += self.data["education"][edu].displayString + "   " #Need to make this a GREP searchabel expression to replace with a return line
-		print(self.data["courses"])
 
+	def parseCourses(self):
+		stagingArray = []
+		hook = False
+		for string in self.data["courses"]:
+			stagingArray.append(string)
+
+		# 	if representsInt(string) == True and hook == True:
+		# 		stagingArray.append(string)
+		# 		# stagingArray.append("BREAK")
+		# 		hook == False
+		# 		# Create object using all parameters 
+		# 	elif string[-5:] == "00000":
+		# 		hook = True
+		# 	elif hook == True and representsInt(string) == False:
+		# 		# stagingArray.append("BREAK")
+		# 		hook == False
+		# 	if hook == False:
+		# 		stagingArray.append(string)
+		print(stagingArray)
+			
+
+			
 
 
 allEmployees = dict()
@@ -283,6 +306,7 @@ for emp in allEmployees:
 	allEmployees[emp].calculateYearsExp()
 	allEmployees[emp].removeTrailingComma()
 	allEmployees[emp].rollupEducation()
+	allEmployees[emp].parseCourses()
 
 
 
@@ -302,7 +326,7 @@ for emp in allEmployees:
 # Write to iterate over the dictionary of workers 
 
 with open('employeeInfo.csv', 'w', newline='') as csvfile:
-	fieldnames = ["name", "nameSuffix", "title", "hireDate", "priorYearsFirm", "priorYearsOther", "licenseDisplay", "eduDisplay", "courses", "certifications", "resumeIntro", "totalYearsExp", "degreeCount", "courseCount", "PELicenseCount", "certCount", "licenses", "education"]
+	fieldnames = ["name", "nameSuffix", "title", "hireDate", "priorYearsFirm", "priorYearsOther", "licenseDisplay", "eduDisplay", "courseDisplay", "certifications", "resumeIntro", "totalYearsExp", "degreeCount", "courseCount", "PELicenseCount", "certCount", "licenses", "education", "courses", "courseObjects"]
 	writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 	writer.writeheader()
 	for emp in allEmployees:
