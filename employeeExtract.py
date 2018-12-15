@@ -259,17 +259,6 @@ for element in section[:]:
 
 				allEmployees[objectName].data["licenses"][allEmployees[objectName].data["PELicenseCount"]].data[Employee.objectKey[key]] = element.getAttribute(key)	
 			if Employee.detailKey[key] == "cor":
-				# if Employee.objectKey[key] == "agency":
-				# 	allEmployees[objectName].data["courseCount"] += 1
-				# 	allEmployees[objectName].data["courses"][allEmployees[objectName].data["courseCount"]] = Course()
-				# 	allEmployees[objectName].data["courses"][allEmployees[objectName].data["courseCount"]].data[Employee.objectKey[key]] = element.getAttribute(key)
-				# #need to deal with instances where the agency is blank as the hook is missed- need to
-				# # 1. recognize that and object already exists and needs to be iterated 
-				# # 2. Iterate the counter
-				# # 3. Create the new course object
-				# # 4. set up watching for when it changes
-
-				# allEmployees[objectName].data["courses"][allEmployees[objectName].data["courseCount"]].data[Employee.objectKey[key]] = element.getAttribute(key)
 				allEmployees[objectName].data["courses"].append(element.getAttribute(key)) 
 			if Employee.detailKey[key] == "cert":
 				allEmployees[objectName].data["certifications"].append(element.getAttribute(key)) 
