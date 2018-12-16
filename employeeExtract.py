@@ -1,9 +1,8 @@
-from xml.dom import minidom
-from datetime import datetime
-from dateutil import relativedelta
-import csv
-
-# SEE LINE 99 for to do item
+from xml.dom import minidom #For parsing the XML (ElementTree had issues parsing this type of doc)
+from datetime import datetime #For formatting dates
+from dateutil import relativedelta #for handling difference in dates
+from itertools import tee, islice, chain
+import csv #for writing to CSV
 
 mydoc = minidom.parse('allwithlicense2.xml')
 
@@ -160,8 +159,10 @@ class Employee:
 	def parseCourses(self):
 		stagingArray = []
 		hook = False
-		for string in self.data["courses"]:
-			stagingArray.append(string)
+		for index, string in enumerate(self.data["courses"]):
+			tup = [index, string]
+			print(index+1)
+			stagingArray.append(tup)
 
 		# 	if representsInt(string) == True and hook == True:
 		# 		stagingArray.append(string)
@@ -175,7 +176,7 @@ class Employee:
 		# 		hook == False
 		# 	if hook == False:
 		# 		stagingArray.append(string)
-		print(stagingArray)
+		
 			
 
 			
