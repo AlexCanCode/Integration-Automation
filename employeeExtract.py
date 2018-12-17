@@ -186,45 +186,27 @@ class Employee:
 					dateTaken = stagingArray["detail_gridUDCol_Employees_Courses_custDate"]
 				if "detail_gridUDCol_Employees_Courses_custCourseNumber" in stagingArray:
 					number = stagingArray["detail_gridUDCol_Employees_Courses_custCourseNumber"]
-				print(name,dateTaken, agency, number)
 				self.data["courseObjects"][self.data["courseCount"]] = Course(name, dateTaken, agency, number)
-				print(self.data["courseObjects"][self.data["courseCount"]])
 				stagingArray.clear()
 				stagingArray[item[0]] = item[1]
 			else:
 				stagingArray[item[0]] = item[1]
-			print(item)
+		name = None
+		dateTaken = None
+		agency = None
+		number = None
+		self.data["courseCount"] += 1
+		if "detail_gridUDCol_Employees_Courses_custCourseName" in stagingArray:
+			name = stagingArray["detail_gridUDCol_Employees_Courses_custCourseName"] 
+		if "detail_gridUDCol_Employees_Courses_custAgency" in stagingArray:
+			agency = stagingArray["detail_gridUDCol_Employees_Courses_custAgency"]
+		if "detail_gridUDCol_Employees_Courses_custDate" in stagingArray:
+			dateTaken = stagingArray["detail_gridUDCol_Employees_Courses_custDate"]
+		if "detail_gridUDCol_Employees_Courses_custCourseNumber" in stagingArray:
+			number = stagingArray["detail_gridUDCol_Employees_Courses_custCourseNumber"]
+		self.data["courseObjects"][self.data["courseCount"]] = Course(name, dateTaken, agency, number)
 
 
-			# if representsInt(item):
-			# 	return 
-			# elif item[-5:] != '00000':
-			# 	stagingArray.append(item)
-			# elif item[-5:] == '00000':
-			# 	stagingArray.append(item) # TODO: format as a date 
-			# 	if representsInt(nxt):
-			# 		stagingArray.append(nxt) # ISSUE: Parsing int doesn't work on courses like 130101A
-			# 		self.data["courseCount"] += 1
-			# 		print(stagingArray)
-			# 		self.data["courseObjects"][self.data["courseCount"]] = Course(*stagingArray)
-			# 		stagingArray.clear()
-			# 	else: 
-			# 		self.data["courseCount"] += 1
-			# 		print(stagingArray)
-			# 		self.data["courseObjects"][self.data["courseCount"]] = Course(*stagingArray)
-			# 		stagingArray.clear()
-		# print(self.data["courseObjects"])
-
-# unpack stagingArr as the parameters to the course
-# store course in the right place (courseObjects)
-# increment courseCount 
-# empty the staging array 
-# skip the next number (if applicable)
-# move on to the next one
-
-
-		# print(stagingArray)
-	
 
 allEmployees = dict()
 
@@ -354,7 +336,9 @@ for emp in allEmployees:
 	allEmployees[emp].removeTrailingComma()
 	allEmployees[emp].rollupEducation()
 	allEmployees[emp].parseCourses()
-	print(employeeCount, allEmployees[emp].data["name"], allEmployees[emp].data["courseObjects"])
+	for cor in allEmployees[emp].data["courseObjects"]:
+		print(allEmployees[emp].data["name"], allEmployees[emp].data["courseObjects"][cor].data)
+	# print(employeeCount, allEmployees[emp].data["name"], allEmployees[emp].data["courseObjects"])
 
 
 
