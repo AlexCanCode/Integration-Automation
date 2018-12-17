@@ -4,7 +4,7 @@ from dateutil import relativedelta #for handling difference in dates
 from itertools import tee, islice, chain
 import csv #for writing to CSV
 
-mydoc = minidom.parse('allwithlicense2.xml')
+mydoc = minidom.parse('WOP-AllWithCourses.xml')
 
 section = mydoc.getElementsByTagName('Detail')
 
@@ -35,11 +35,25 @@ def formatDate(date):
 	return datetime.strptime(date.rstrip("T00:00:00"), '%Y-%m-%d').date() #May add to Employee
 
 def representsInt(input):
+	if input == None:
+		return False
 	try:
 		int(input)
 		return True
 	except ValueError:
+		pass
+	try:
+		int(input[:-1])
+		return True
+	except ValueError:
 		return False
+
+
+def previous_and_next(some_iterable): #https://stackoverflow.com/questions/1011938/python-previous-and-next-values-inside-a-loop
+	prevs, items, nexts = tee(some_iterable, 3)
+	prevs = chain([None], prevs)
+	nexts = chain(islice(nexts, 1, None), [None])
+	return zip(prevs, items, nexts)
 
 #base class Employee
 class Employee:
@@ -66,8 +80,6 @@ class Employee:
 			"certCount": 0, 
 			"degreeCount": 0
 		}
-
-		self.courseDisplay = ""
 
 	detailKey = {
 		"DetailField_FullName_Section_1": "hook",
@@ -157,30 +169,62 @@ class Employee:
 			self.data["eduDisplay"] += self.data["education"][edu].displayString + "   " #Need to make this a GREP searchabel expression to replace with a return line
 
 	def parseCourses(self):
-		stagingArray = []
-		hook = False
-		for index, string in enumerate(self.data["courses"]):
-			tup = [index, string]
-			print(index+1)
-			stagingArray.append(tup)
+		stagingArray = {}
 
-		# 	if representsInt(string) == True and hook == True:
-		# 		stagingArray.append(string)
-		# 		# stagingArray.append("BREAK")
-		# 		hook == False
-		# 		# Create object using all parameters 
-		# 	elif string[-5:] == "00000":
-		# 		hook = True
-		# 	elif hook == True and representsInt(string) == False:
-		# 		# stagingArray.append("BREAK")
-		# 		hook == False
-		# 	if hook == False:
-		# 		stagingArray.append(string)
-		
-			
+		for item in self.data["courses"]:
+			if item[0] in stagingArray:
+				name = None
+				dateTaken = None
+				agency = None
+				number = None
+				self.data["courseCount"] += 1
+				if "detail_gridUDCol_Employees_Courses_custCourseName" in stagingArray:
+					name = stagingArray["detail_gridUDCol_Employees_Courses_custCourseName"] 
+				if "detail_gridUDCol_Employees_Courses_custAgency" in stagingArray:
+					agency = stagingArray["detail_gridUDCol_Employees_Courses_custAgency"]
+				if "detail_gridUDCol_Employees_Courses_custDate" in stagingArray:
+					dateTaken = stagingArray["detail_gridUDCol_Employees_Courses_custDate"]
+				if "detail_gridUDCol_Employees_Courses_custCourseNumber" in stagingArray:
+					number = stagingArray["detail_gridUDCol_Employees_Courses_custCourseNumber"]
+				print(name,dateTaken, agency, number)
+				self.data["courseObjects"][self.data["courseCount"]] = Course(name, dateTaken, agency, number)
+				print(self.data["courseObjects"][self.data["courseCount"]])
+				stagingArray.clear()
+				stagingArray[item[0]] = item[1]
+			else:
+				stagingArray[item[0]] = item[1]
+			print(item)
 
-			
 
+			# if representsInt(item):
+			# 	return 
+			# elif item[-5:] != '00000':
+			# 	stagingArray.append(item)
+			# elif item[-5:] == '00000':
+			# 	stagingArray.append(item) # TODO: format as a date 
+			# 	if representsInt(nxt):
+			# 		stagingArray.append(nxt) # ISSUE: Parsing int doesn't work on courses like 130101A
+			# 		self.data["courseCount"] += 1
+			# 		print(stagingArray)
+			# 		self.data["courseObjects"][self.data["courseCount"]] = Course(*stagingArray)
+			# 		stagingArray.clear()
+			# 	else: 
+			# 		self.data["courseCount"] += 1
+			# 		print(stagingArray)
+			# 		self.data["courseObjects"][self.data["courseCount"]] = Course(*stagingArray)
+			# 		stagingArray.clear()
+		# print(self.data["courseObjects"])
+
+# unpack stagingArr as the parameters to the course
+# store course in the right place (courseObjects)
+# increment courseCount 
+# empty the staging array 
+# skip the next number (if applicable)
+# move on to the next one
+
+
+		# print(stagingArray)
+	
 
 allEmployees = dict()
 
@@ -225,16 +269,15 @@ class License(Employee):
 		
 class Course(Employee):
 
-	def __init__(self):
+	def __init__(self, name=None, dateTaken=None, agency=None, number=0):
 		self.data = {
-			"agency": "",
-			"name": "",
-			"dateTaken": 0,
-			"number": 0
+			"agency": agency,
+			"name": name,
+			"dateTaken": dateTaken,
+			"number": number
 		}
 		self.isExpired: False
 		self.displayString: None
-
 
 class Degree(Employee):
 
@@ -283,7 +326,7 @@ for element in section[:]:
 
 				allEmployees[objectName].data["licenses"][allEmployees[objectName].data["PELicenseCount"]].data[Employee.objectKey[key]] = element.getAttribute(key)	
 			if Employee.detailKey[key] == "cor":
-				allEmployees[objectName].data["courses"].append(element.getAttribute(key)) 
+				allEmployees[objectName].data["courses"].append([key, element.getAttribute(key)]) 
 			if Employee.detailKey[key] == "cert":
 				allEmployees[objectName].data["certifications"].append(element.getAttribute(key)) 
 			if Employee.detailKey[key] == "edu":
@@ -301,13 +344,17 @@ for emp in allEmployees:
 	for edu in allEmployees[emp].data["education"]:
 		allEmployees[emp].data["education"][edu].getEducationResumeFormat()
 
+employeeCount = 0 
+
 # Rollup licenses for employee
 for emp in allEmployees:
+	employeeCount += 1
 	allEmployees[emp].rollupLicenses()
 	allEmployees[emp].calculateYearsExp()
 	allEmployees[emp].removeTrailingComma()
 	allEmployees[emp].rollupEducation()
 	allEmployees[emp].parseCourses()
+	print(employeeCount, allEmployees[emp].data["name"], allEmployees[emp].data["courseObjects"])
 
 
 
