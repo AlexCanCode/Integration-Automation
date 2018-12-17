@@ -160,13 +160,17 @@ class Employee:
 				return
 			self.data["licenseDisplay"] += self.data["licenses"][license].displayString
 
-	def removeTrailingComma(self):
-		if self.data["licenseDisplay"].endswith(", "):
-			self.data["licenseDisplay"] = self.data["licenseDisplay"][: -2]
-
+	def rollupCourses(self):
+		for cor in self.data["courseObjects"]:
+			self.data["courseDisplay"] += self.data["courseObjects"][cor].displayString + "    " #GREP Return marker here
+			
 	def rollupEducation(self):
 		for edu in self.data["education"]:
 			self.data["eduDisplay"] += self.data["education"][edu].displayString + "   " #Need to make this a GREP searchabel expression to replace with a return line
+
+	def removeTrailingComma(self):
+		if self.data["licenseDisplay"].endswith(", "):
+			self.data["licenseDisplay"] = self.data["licenseDisplay"][: -2]
 
 	def parseCourses(self):
 		stagingArray = {}
@@ -246,6 +250,7 @@ class License(Employee):
 			if self.isMain == True:
 				self.displayString = self.data["state"] + " #" + self.data["number"]
 			self.displayString = self.data["state"] + ", "
+		print(self.displayString)
 
 	
 		
@@ -254,12 +259,24 @@ class Course(Employee):
 	def __init__(self, name=None, dateTaken=None, agency=None, number=0):
 		self.data = {
 			"agency": agency,
+			"number": number, 
 			"name": name,
-			"dateTaken": dateTaken,
-			"number": number
+			"dateTaken": dateTaken
+
 		}
-		self.isExpired: False
-		self.displayString: None
+		self.isExpired = False
+		self.displayString = None
+
+	def getCourseResumeFormat(self):
+		listToSanitize = []
+		for item in self.data:
+			if self.data[item] == None:
+				pass 
+			elif item == "dateTaken":
+				pass 
+			else:
+				listToSanitize.append(self.data[item])
+				self.displayString = ', '.join(listToSanitize)
 
 class Degree(Employee):
 
@@ -326,19 +343,22 @@ for emp in allEmployees:
 	for edu in allEmployees[emp].data["education"]:
 		allEmployees[emp].data["education"][edu].getEducationResumeFormat()
 
-employeeCount = 0 
+
 
 # Rollup licenses for employee
 for emp in allEmployees:
-	employeeCount += 1
 	allEmployees[emp].rollupLicenses()
 	allEmployees[emp].calculateYearsExp()
 	allEmployees[emp].removeTrailingComma()
 	allEmployees[emp].rollupEducation()
 	allEmployees[emp].parseCourses()
+	# allEmployees[emp].rollupCourses()
+
 	for cor in allEmployees[emp].data["courseObjects"]:
-		print(allEmployees[emp].data["name"], allEmployees[emp].data["courseObjects"][cor].data)
-	# print(employeeCount, allEmployees[emp].data["name"], allEmployees[emp].data["courseObjects"])
+		allEmployees[emp].data["courseObjects"][cor].getCourseResumeFormat()
+	
+	allEmployees[emp].rollupCourses()
+	print(allEmployees[emp].data["courseDisplay"])
 
 
 
