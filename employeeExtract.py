@@ -72,7 +72,9 @@ class Employee:
 			"courseDisplay": "",
 			"courses": [],
 			"courseObjects": {},
-			"certifications": [], 
+			"certDisplay": "",
+			"certifications": [],
+			"certObjects": {}, 
 			"education": {},
 			"resumeIntro": [], 
 			"PELicenseCount": 0, 
@@ -210,6 +212,44 @@ class Employee:
 			number = stagingArray["detail_gridUDCol_Employees_Courses_custCourseNumber"]
 		self.data["courseObjects"][self.data["courseCount"]] = Course(name, dateTaken, agency, number)
 
+	def parseCerts(self):
+		stagingArray = {}
+
+		for item in self.data["certifications"]:
+			if item[0] in stagingArray:
+				title = None
+				expDate = None
+				agency = None
+				number = None
+				self.data["certCount"] += 1
+				if "detail_gridUDCol_Employees_Certifications_custTitle" in stagingArray:
+					title = stagingArray["detail_gridUDCol_Employees_Certifications_custTitle"] 
+				if "detail_gridUDCol_Employees_Certifications_custCertAgency" in stagingArray:
+					agency = stagingArray["detail_gridUDCol_Employees_Certifications_custCertAgency"]
+				if "detail_gridUDCol_Employees_Certifications_custExpirationDate" in stagingArray:
+					expDate = stagingArray["detail_gridUDCol_Employees_Certifications_custExpirationDate"]
+				if "detail_gridUDCol_Employees_Certifications_custCertNumber" in stagingArray:
+					number = stagingArray["detail_gridUDCol_Employees_Certifications_custCertNumber"]
+				self.data["certObjects"][self.data["certCount"]] = Certification(agency, number, title, expDate)
+				stagingArray.clear()
+				stagingArray[item[0]] = item[1]
+			else:
+				stagingArray[item[0]] = item[1]
+		title = None
+		expDate = None
+		agency = None
+		number = None
+		self.data["certCount"] += 1
+		if "detail_gridUDCol_Employees_Certifications_custTitle" in stagingArray:
+			title = stagingArray["detail_gridUDCol_Employees_Certifications_custTitle"] 
+		if "detail_gridUDCol_Employees_Certifications_custCertAgency" in stagingArray:
+			agency = stagingArray["detail_gridUDCol_Employees_Certifications_custCertAgency"]
+		if "detail_gridUDCol_Employees_Certifications_custExpirationDate" in stagingArray:
+			expDate = stagingArray["detail_gridUDCol_Employees_Certifications_custExpirationDate"]
+		if "detail_gridUDCol_Employees_Certifications_custCertNumber" in stagingArray:
+			number = stagingArray["detail_gridUDCol_Employees_Certifications_custCertNumber"]
+		self.data["certObjects"][self.data["certCount"]] = Certification(agency, number, title, expDate)
+
 
 
 allEmployees = dict()
@@ -293,19 +333,25 @@ class Degree(Employee):
 	def getEducationResumeFormat(self):
 		self.displayString = self.data["degree"] + ", " + self.data["specialty"] + ", " + self.data["school"] + ", " + self.data["gradYear"]
 
+class Certification(Employee):
+
+	def __init__(self, agency=None, number=None, title=None, expDate=None):
+		self.data = {
+			"agency": agency,
+			"number": number,
+			"title": title,
+			"expDate": expDate
+		}
+
+		self.isExpired: False
+		self.displayString: None
+
 
 newCert = {
 	"agency": "",
 	"number": 0, 
 	"expDate": 0, 
 	"expires": True #optional
-}
-
-newDegree = {
-	"degree": "",
-	"specialty": "",
-	"school": "",
-	"gradYear": 0
 }
 
 # To do - make this switch nonsense more sane 
@@ -327,7 +373,7 @@ for element in section[:]:
 			if Employee.detailKey[key] == "cor":
 				allEmployees[objectName].data["courses"].append([key, element.getAttribute(key)]) 
 			if Employee.detailKey[key] == "cert":
-				allEmployees[objectName].data["certifications"].append(element.getAttribute(key)) 
+				allEmployees[objectName].data["certifications"].append([key, element.getAttribute(key)]) 
 			if Employee.detailKey[key] == "edu":
 				if Employee.objectKey[key] == "degree":
 					allEmployees[objectName].data["degreeCount"] += 1
@@ -352,14 +398,16 @@ for emp in allEmployees:
 	allEmployees[emp].removeTrailingComma()
 	allEmployees[emp].rollupEducation()
 	allEmployees[emp].parseCourses()
-	# allEmployees[emp].rollupCourses()
+	allEmployees[emp].parseCerts()
 
 	for cor in allEmployees[emp].data["courseObjects"]:
 		allEmployees[emp].data["courseObjects"][cor].getCourseResumeFormat()
 	
 	allEmployees[emp].rollupCourses()
-	print(allEmployees[emp].data["courseDisplay"])
 
+
+	for cert in allEmployees[emp].data["certObjects"]:
+		print(allEmployees[emp].data["certObjects"][cert].data)
 
 
 # for emp in allEmployees:
@@ -378,7 +426,7 @@ for emp in allEmployees:
 # Write to iterate over the dictionary of workers 
 
 with open('employeeInfo.csv', 'w', newline='') as csvfile:
-	fieldnames = ["name", "nameSuffix", "title", "hireDate", "priorYearsFirm", "priorYearsOther", "licenseDisplay", "eduDisplay", "courseDisplay", "certifications", "resumeIntro", "totalYearsExp", "degreeCount", "courseCount", "PELicenseCount", "certCount", "licenses", "education", "courses", "courseObjects"]
+	fieldnames = ["name", "nameSuffix", "title", "hireDate", "priorYearsFirm", "priorYearsOther", "licenseDisplay", "eduDisplay", "courseDisplay", "certDisplay", "resumeIntro", "totalYearsExp", "degreeCount", "courseCount", "PELicenseCount", "certCount", "licenses", "education", "courses", "courseObjects", "certifications", "certObjects"]
 	writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 	writer.writeheader()
 	for emp in allEmployees:
