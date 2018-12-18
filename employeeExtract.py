@@ -4,16 +4,14 @@ from dateutil import relativedelta #for handling difference in dates
 from itertools import tee, islice, chain
 import csv #for writing to CSV
 
-mydoc = minidom.parse('WOP-AllWithCourses.xml')
+mydoc = minidom.parse('WOP-AllWithCoursesV2.xml')
 
 section = mydoc.getElementsByTagName('Detail')
 
 #### PLEASE NOTE: The author is aware that this code needs a healthy does of DRY and general improvements for readability and maintenance. It is a first attempt to hack together a xml parsing program in Python, a new language to the original author. There is uneeded complexity and repition which will be worked out once a working prototype is fully developed. 
 
-
-
 def formatDate(date):
-	return datetime.strptime(date.rstrip("T00:00:00"), '%Y-%m-%d').date() #May add to Employee
+	return datetime.strptime(date[:-9], '%Y-%m-%d').date() #May add to Employee
 
 def representsInt(input):
 	if input == None:
@@ -58,7 +56,7 @@ class Employee:
 			"certifications": [],
 			"certObjects": {}, 
 			"education": {},
-			"resumeIntro": [], 
+			"resumeIntro": "", 
 			"PELicenseCount": 0, 
 			"courseCount": 0,
 			"certCount": 0, 
@@ -91,7 +89,7 @@ class Employee:
 		"detail_Education_Institution": "edu",
 		"detail_Education_Year": "edu",
 		# "Design and Inspection Resume": "",
-		# "detail_level": "res" #Shows up first but serves as a poor hook
+		"detail_level": "res" #Shows up first but serves as a poor hook
 	}
 
 	dataKey = { #need to add other fields
@@ -162,15 +160,6 @@ class Employee:
 			self.data["displayName"] = formName + ", " + self.data["nameSuffix"]
 		else:
 			self.data["displayName"] = formName
-		
-		print(self.data["displayName"])
-		# print(formName)
-		# self.data["name"] =
-
-		# if specialNameCases[formName[-1]]:
-		# 	print("DFJHDASJHDSKFJHDSKHFJDK")
-		# print(self.data["nameSuffix"]) 
-
 
 	def rollupLicenses(self):
 		for license in self.data["licenses"]:
@@ -367,19 +356,42 @@ class Certification(Employee):
 
 		self.isExpired = False
 		self.displayString = None
+		self.expInfo = None
+
+	def checkExpiration(self):
+		if self.data["expDate"] == None:
+			return
+		elif len(self.data["expDate"]) == 23:
+			self.data["expDate"] = self.data["expDate"][:-4]
+		today = datetime.now().date()
+		if today > formatDate(self.data["expDate"]):
+			self.isExpired = True
+			self.expInfo = self.data["title"] + " cert is expired for " #Get employee name to make this a more useful error
 
 	def getCertResumeFormat(self):
+		certWithNumKeyWords = ["Diving", "ADCI", "Dive"]
 		listToSanitize = []
-		for item in self.data:
-			if self.data[item] == None:
-				pass 
-			elif item == "expDate":
-				pass 
-			else:
-				listToSanitize.append(self.data[item])
-				self.displayString = ', '.join(listToSanitize)
+		self.checkExpiration()
+		if self.isExpired == True:
+			return
+		elif self.data["agency"] == None:
+			return 
+		elif any(word in self.data["agency"] for word in certWithNumKeyWords): # Split into string and test each against the keyword list
+			self.displayString = self.data["agency"] + " #" + self.data["number"] + " - " + self.data["title"]
+		else:	
+			for item in self.data:
+				if self.data[item] == None:
+					pass 
+				elif item == "expDate":
+					pass 
+				else:
+					listToSanitize.append(self.data[item])
+					self.displayString = ', '.join(listToSanitize)
 
+		print(self.displayString)
 
+resumeIntroSave = {}
+employeeCount = 0
 
 # To do - make this switch nonsense more sane 
 for element in section[:]:
@@ -408,8 +420,19 @@ for element in section[:]:
 					allEmployees[objectName].data["education"][allEmployees[objectName].data["degreeCount"]].data[Employee.objectKey[key]] = element.getAttribute(key)
 
 				allEmployees[objectName].data["education"][allEmployees[objectName].data["degreeCount"]].data[Employee.objectKey[key]] = element.getAttribute(key)
-			if Employee.detailKey[key] == "res":
-				allEmployees[objectName].data["resumeIntro"].append(element.getAttribute(key)) 
+			# if Employee.detailKey[key] == "res":
+				# try:
+				# 	if allEmployees[objectName] == False:
+				# 		employeeCount += 1
+				# 		resumeIntroSave[employeeCount] = element.getAttribute(key)
+				# elif allEmployees[objectName]:
+
+				# 	if employeeCount in resumeIntroSave:
+				# 		resumeIntroSave[employeeCount] += ", " + element.getAttribute(key)
+				# 	else:
+				# 		employeeCount += 1
+				# 		resumeIntroSave[employeeCount] = element.getAttribute(key)
+				
 
 # Loop to execute for each license
 for emp in allEmployees:
@@ -436,6 +459,7 @@ for emp in allEmployees:
 	
 	allEmployees[emp].rollupCourses()
 	allEmployees[emp].rollupCerts()
+	# print(allEmployees[emp].data["displayName"], allEmployees[emp].data["resumeIntro"])
 
 
 # Write to iterate over the dictionary of employees 
