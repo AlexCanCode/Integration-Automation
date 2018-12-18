@@ -8,16 +8,9 @@ mydoc = minidom.parse('WOP-AllWithCourses.xml')
 
 section = mydoc.getElementsByTagName('Detail')
 
-#### PLEASE NOTE: This code needs a healthy does of DRY and is a first attempt to hack together a xml parsing program in Python, a new language to the original author. There is uneeded complexity and repition which will be worked out once a working prototype is developed. 
+#### PLEASE NOTE: The author is aware that this code needs a healthy does of DRY and general improvements for readability and maintenance. It is a first attempt to hack together a xml parsing program in Python, a new language to the original author. There is uneeded complexity and repition which will be worked out once a working prototype is fully developed. 
 
-#object methods needed
-# - to deal with date formats
-# 	- Write funciton to calculate years of expierence date
-# - Calculate the right licnese to use
-# - to accept multiple courses and certs
-# - Improvement: Take list of their projects and determine what title has been used most and apply that one
-# implement an optional y/n boolean for a prefferred name or a middle name situation. IMplement logic to resolve to the right name
-# Split name into first last and middle - concat based on the previous todo (first + Last + Suffix for most) 
+
 
 def formatDate(date):
 	return datetime.strptime(date.rstrip("T00:00:00"), '%Y-%m-%d').date() #May add to Employee
@@ -49,12 +42,13 @@ class Employee:
 	def __init__(self, name):
 		self.data = {
 			"name": name,
-			"nameSuffix": "",							
+			"nameSuffix": "",
+			"displayName": "",							
 			"title": "",
 			"hireDate": 0,
 			"priorYearsFirm": 0,
 			"priorYearsOther": 0,
-			"licenses": {}, # Write a function for employee to roll up all the displays for licenses into one string to put in csv
+			"licenses": {}, 
 			"licenseDisplay": "",
 			"eduDisplay": "",
 			"courseDisplay": "",
@@ -144,6 +138,40 @@ class Employee:
 		difference = relativedelta.relativedelta(today, self.data["hireDate"]).years
 		self.data["totalYearsExp"] = (difference + self.data["priorYearsFirm"] + self.data["priorYearsOther"])
 
+	def formatName(self):
+		acceptedSuffixes = ["PE", "EI", "EIT", "CBI", "II", "III"]
+		specialNameCases = {"Kincaid": "Ikaika Kincaid", "Maurer": "Mary Ellen Maurer", "Cole": "Branson Cole", "Sasher": "Christopher Sasher"}
+		formName = self.data["name"].strip().split(" ")
+
+		if len(formName) > 2:
+			del formName[1]
+		
+		if formName[-1] in acceptedSuffixes:
+			self.data["nameSuffix"] = formName[-1]
+			formName.pop()
+			if formName[-1] == "PE,":
+				formName.pop()
+				self.data["nameSuffix"] += ", PE"
+
+		if formName[-1] in specialNameCases:
+			self.data["name"] = specialNameCases[formName[-1]]
+
+		formName = " ".join(formName)
+		
+		if self.data["nameSuffix"]:
+			self.data["displayName"] = formName + ", " + self.data["nameSuffix"]
+		else:
+			self.data["displayName"] = formName
+		
+		print(self.data["displayName"])
+		# print(formName)
+		# self.data["name"] =
+
+		# if specialNameCases[formName[-1]]:
+		# 	print("DFJHDASJHDSKFJHDSKHFJDK")
+		# print(self.data["nameSuffix"]) 
+
+
 	def rollupLicenses(self):
 		for license in self.data["licenses"]:
 			if self.data["licenses"][license].displayString == None:
@@ -162,7 +190,7 @@ class Employee:
 
 	def rollupEducation(self):
 		for edu in self.data["education"]:
-			self.data["eduDisplay"] += self.data["education"][edu].displayString + "   " #Need to make this a GREP searchabel expression to replace with a return line
+			self.data["eduDisplay"] += self.data["education"][edu].displayString + "   " #Need to make this a GREP searchable expression to replace with a return line
 
 	def removeTrailingComma(self):
 		if self.data["licenseDisplay"].endswith(", "):
@@ -398,6 +426,7 @@ for emp in allEmployees:
 	allEmployees[emp].rollupEducation()
 	allEmployees[emp].parseCourses()
 	allEmployees[emp].parseCerts()
+	allEmployees[emp].formatName()
 
 	for cor in allEmployees[emp].data["courseObjects"]:
 		allEmployees[emp].data["courseObjects"][cor].getCourseResumeFormat()	
@@ -409,26 +438,10 @@ for emp in allEmployees:
 	allEmployees[emp].rollupCerts()
 
 
-	print(allEmployees[emp].data["certDisplay"])
-
-
-# for emp in allEmployees:
-# 	print(allEmployees[emp].data)
-
-# 	for course in allEmployees[emp].data["courses"]:
-# 		print(allEmployees[emp].data["courses"][course].data)
-
-
-
-# employeeData = Worker.data
-
-# print(employeeData)
-
-
-# Write to iterate over the dictionary of workers 
+# Write to iterate over the dictionary of employees 
 
 with open('employeeInfo.csv', 'w', newline='') as csvfile:
-	fieldnames = ["name", "nameSuffix", "title", "hireDate", "priorYearsFirm", "priorYearsOther", "licenseDisplay", "eduDisplay", "courseDisplay", "certDisplay", "resumeIntro", "totalYearsExp", "degreeCount", "courseCount", "PELicenseCount", "certCount", "licenses", "education", "courses", "courseObjects", "certifications", "certObjects"]
+	fieldnames = ["displayName", "title", "hireDate", "priorYearsFirm", "priorYearsOther", "licenseDisplay", "eduDisplay", "courseDisplay", "certDisplay", "resumeIntro", "totalYearsExp", "degreeCount", "courseCount", "PELicenseCount", "certCount", "licenses", "education", "courses", "courseObjects", "certifications", "certObjects", "name", "nameSuffix"]
 	writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 	writer.writeheader()
 	for emp in allEmployees:
