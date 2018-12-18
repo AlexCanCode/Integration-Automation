@@ -8,12 +8,7 @@ mydoc = minidom.parse('WOP-AllWithCourses.xml')
 
 section = mydoc.getElementsByTagName('Detail')
 
-# print(table[0].attribute['detail_description'].value)
-
-# deatilCollection = section[0].getElementsByTagName('Detail')[0].attributes['DetailField_FullName_Section_1'].value
-
-# deatilCollection = type(section[0].getElementsByTagName('Detail'))
-
+#### PLEASE NOTE: This code needs a healthy does of DRY and is a first attempt to hack together a xml parsing program in Python, a new language to the original author. There is uneeded complexity and repition which will be worked out once a working prototype is developed. 
 
 #object methods needed
 # - to deal with date formats
@@ -23,13 +18,6 @@ section = mydoc.getElementsByTagName('Detail')
 # - Improvement: Take list of their projects and determine what title has been used most and apply that one
 # implement an optional y/n boolean for a prefferred name or a middle name situation. IMplement logic to resolve to the right name
 # Split name into first last and middle - concat based on the previous todo (first + Last + Suffix for most) 
-
-
-# with open('employeeInfo.csv', 'w', newline='') as csvfile:
-# 	fieldnames = ["name", "nameSuffix", "title", "hireDate", "priorYearsFirm", "priorYearsOther", "hireDate", "priorYearsFirm", "priorYearsOther", "licenses", "courses", "certifications", "education", "resumeIntro", "totalYearsExp"]
-# 	writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-# 	writer.writeheader()
-
 
 def formatDate(date):
 	return datetime.strptime(date.rstrip("T00:00:00"), '%Y-%m-%d').date() #May add to Employee
@@ -165,7 +153,13 @@ class Employee:
 	def rollupCourses(self):
 		for cor in self.data["courseObjects"]:
 			self.data["courseDisplay"] += self.data["courseObjects"][cor].displayString + "    " #GREP Return marker here
-			
+	
+	def rollupCerts(self):
+		for cert in self.data["certObjects"]:
+			if self.data["certObjects"][cert].displayString == None:
+				return
+			self.data["certDisplay"] += self.data["certObjects"][cert].displayString + "    " #GREP Return marker here
+
 	def rollupEducation(self):
 		for edu in self.data["education"]:
 			self.data["eduDisplay"] += self.data["education"][edu].displayString + "   " #Need to make this a GREP searchabel expression to replace with a return line
@@ -290,7 +284,7 @@ class License(Employee):
 			if self.isMain == True:
 				self.displayString = self.data["state"] + " #" + self.data["number"]
 			self.displayString = self.data["state"] + ", "
-		print(self.displayString)
+
 
 	
 		
@@ -343,16 +337,21 @@ class Certification(Employee):
 			"expDate": expDate
 		}
 
-		self.isExpired: False
-		self.displayString: None
+		self.isExpired = False
+		self.displayString = None
+
+	def getCertResumeFormat(self):
+		listToSanitize = []
+		for item in self.data:
+			if self.data[item] == None:
+				pass 
+			elif item == "expDate":
+				pass 
+			else:
+				listToSanitize.append(self.data[item])
+				self.displayString = ', '.join(listToSanitize)
 
 
-newCert = {
-	"agency": "",
-	"number": 0, 
-	"expDate": 0, 
-	"expires": True #optional
-}
 
 # To do - make this switch nonsense more sane 
 for element in section[:]:
@@ -401,13 +400,16 @@ for emp in allEmployees:
 	allEmployees[emp].parseCerts()
 
 	for cor in allEmployees[emp].data["courseObjects"]:
-		allEmployees[emp].data["courseObjects"][cor].getCourseResumeFormat()
-	
-	allEmployees[emp].rollupCourses()
-
+		allEmployees[emp].data["courseObjects"][cor].getCourseResumeFormat()	
 
 	for cert in allEmployees[emp].data["certObjects"]:
-		print(allEmployees[emp].data["certObjects"][cert].data)
+		allEmployees[emp].data["certObjects"][cert].getCertResumeFormat()
+	
+	allEmployees[emp].rollupCourses()
+	allEmployees[emp].rollupCerts()
+
+
+	print(allEmployees[emp].data["certDisplay"])
 
 
 # for emp in allEmployees:
