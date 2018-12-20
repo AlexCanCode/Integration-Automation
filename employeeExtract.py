@@ -167,6 +167,7 @@ class Employee:
 		for license in self.data["licenses"]:
 			if self.data["licenses"][license].displayString is not None:
 				self.data["licenseDisplay"] += self.data["licenses"][license].displayString
+		# HERE IS WHERE YOU CAN ADD "AND": insert it X many spots back (X sould be the appropriate [place for all instances])
 
 	def rollupCourses(self):
 		print(self.data["name"])
@@ -178,6 +179,7 @@ class Employee:
 				return
 			else:
 				self.data["courseDisplay"] += self.data["courseObjects"][cor].displayString + "~" #GREP Return marker here
+		self.data["courseDisplay"] = self.data["courseDisplay"][:-1]
 	
 	def rollupCerts(self):
 		for i, cert in enumerate(self.data["certObjects"]):
@@ -185,15 +187,14 @@ class Employee:
 				pass
 			else:
 				self.data["certDisplay"] += self.data["certObjects"][cert].displayString + "~" #GREP Return marker here
-			# if i == len(self.data["certObjects"]) - 1:
-			# 	print(self.data["certDisplay"])
-			# 	self.data["certDisplay"] = self.data["certDisplay"][:-1]
+
+		self.data["certDisplay"] = self.data["certDisplay"][:-1]
 
 	def rollupEducation(self):
 		for i, edu in enumerate(self.data["education"]):
 			self.data["eduDisplay"] += self.data["education"][edu].displayString + "~" #Need to make this a GREP searchable expression to replace with a return line
-			if i == len(self.data["education"]) - 1:
-				self.data["eduDisplay"] = self.data["eduDisplay"][:-1]
+		self.data["eduDisplay"] = self.data["eduDisplay"][:-1]
+
 
 	def removeTrailingComma(self):
 		if self.data["licenseDisplay"].endswith(", "):
