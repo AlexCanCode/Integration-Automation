@@ -4,17 +4,19 @@ from dateutil import relativedelta #for handling difference in dates
 from itertools import tee, islice, chain
 import csv #for writing to CSV
 
-mydoc = minidom.parse('WOP-AllWithCoursesV2.xml')
+mydoc = minidom.parse('WOP-ALLIEI.xml')
 
 section = mydoc.getElementsByTagName('Detail')
 
 #### PLEASE NOTE: The author is aware that this code needs a healthy does of DRY and general improvements for readability and maintenance. It is a first attempt to hack together a xml parsing program in Python, a new language to the original author. There is uneeded complexity and repition which will be worked out once a working prototype is fully developed. 
 
+employeeErrors = []
+
 def formatDate(date):
 	return datetime.strptime(date[:-9], '%Y-%m-%d').date() #May add to Employee
 
 def representsInt(input):
-	if input == None:
+	if input is None:
 		return False
 	try:
 		int(input)
@@ -163,17 +165,23 @@ class Employee:
 
 	def rollupLicenses(self):
 		for license in self.data["licenses"]:
-			if self.data["licenses"][license].displayString == None:
+			if self.data["licenses"][license].displayString is None:
 				return
 			self.data["licenseDisplay"] += self.data["licenses"][license].displayString
 
 	def rollupCourses(self):
+		print(self.data["name"])
 		for cor in self.data["courseObjects"]:
+			targetCert = self.data["courseObjects"][cor]
+			if self.data["courseObjects"][cor] is None:
+				return
+			elif targetCert.data["name"] is None and targetCert.data["agency"] is None and targetCert.data["number"] is None: 
+				return
 			self.data["courseDisplay"] += self.data["courseObjects"][cor].displayString + "    " #GREP Return marker here
 	
 	def rollupCerts(self):
 		for cert in self.data["certObjects"]:
-			if self.data["certObjects"][cert].displayString == None:
+			if self.data["certObjects"][cert].displayString is None:
 				return
 			self.data["certDisplay"] += self.data["certObjects"][cert].displayString + "    " #GREP Return marker here
 
@@ -321,7 +329,7 @@ class Course(Employee):
 	def getCourseResumeFormat(self):
 		listToSanitize = []
 		for item in self.data:
-			if self.data[item] == None:
+			if self.data[item] is None:
 				pass 
 			elif item == "dateTaken":
 				pass 
@@ -359,7 +367,7 @@ class Certification(Employee):
 		self.expInfo = None
 
 	def checkExpiration(self):
-		if self.data["expDate"] == None:
+		if self.data["expDate"] is None:
 			return
 		elif len(self.data["expDate"]) == 23:
 			self.data["expDate"] = self.data["expDate"][:-4]
@@ -374,21 +382,22 @@ class Certification(Employee):
 		self.checkExpiration()
 		if self.isExpired == True:
 			return
-		elif self.data["agency"] == None:
+		elif self.data["agency"] is None:
 			return 
 		elif any(word in self.data["agency"] for word in certWithNumKeyWords): # Split into string and test each against the keyword list
+			if self.data["number"] is None:
+				employeeErrors.append("no ADCI Cert Number Given")
+				return
 			self.displayString = self.data["agency"] + " #" + self.data["number"] + " - " + self.data["title"]
 		else:	
 			for item in self.data:
-				if self.data[item] == None:
+				if self.data[item] is None:
 					pass 
 				elif item == "expDate":
 					pass 
 				else:
 					listToSanitize.append(self.data[item])
 					self.displayString = ', '.join(listToSanitize)
-
-		print(self.displayString)
 
 resumeIntroSave = {}
 employeeCount = 0
@@ -418,8 +427,10 @@ for element in section[:]:
 					allEmployees[objectName].data["degreeCount"] += 1
 					allEmployees[objectName].data["education"][allEmployees[objectName].data["degreeCount"]] = Degree()
 					allEmployees[objectName].data["education"][allEmployees[objectName].data["degreeCount"]].data[Employee.objectKey[key]] = element.getAttribute(key)
-
-				allEmployees[objectName].data["education"][allEmployees[objectName].data["degreeCount"]].data[Employee.objectKey[key]] = element.getAttribute(key)
+				try:
+					allEmployees[objectName].data["education"][allEmployees[objectName].data["degreeCount"]].data[Employee.objectKey[key]] = element.getAttribute(key)
+				except KeyError:
+					pass
 			# if Employee.detailKey[key] == "res":
 				# try:
 				# 	if allEmployees[objectName] == False:
