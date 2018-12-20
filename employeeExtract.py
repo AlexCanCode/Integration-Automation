@@ -165,29 +165,35 @@ class Employee:
 
 	def rollupLicenses(self):
 		for license in self.data["licenses"]:
-			if self.data["licenses"][license].displayString is None:
-				return
-			self.data["licenseDisplay"] += self.data["licenses"][license].displayString
+			if self.data["licenses"][license].displayString is not None:
+				self.data["licenseDisplay"] += self.data["licenses"][license].displayString
 
 	def rollupCourses(self):
 		print(self.data["name"])
 		for cor in self.data["courseObjects"]:
 			targetCert = self.data["courseObjects"][cor]
 			if self.data["courseObjects"][cor] is None:
-				return
+				pass
 			elif targetCert.data["name"] is None and targetCert.data["agency"] is None and targetCert.data["number"] is None: 
 				return
-			self.data["courseDisplay"] += self.data["courseObjects"][cor].displayString + "    " #GREP Return marker here
+			else:
+				self.data["courseDisplay"] += self.data["courseObjects"][cor].displayString + "~" #GREP Return marker here
 	
 	def rollupCerts(self):
-		for cert in self.data["certObjects"]:
+		for i, cert in enumerate(self.data["certObjects"]):
 			if self.data["certObjects"][cert].displayString is None:
-				return
-			self.data["certDisplay"] += self.data["certObjects"][cert].displayString + "    " #GREP Return marker here
+				pass
+			else:
+				self.data["certDisplay"] += self.data["certObjects"][cert].displayString + "~" #GREP Return marker here
+			# if i == len(self.data["certObjects"]) - 1:
+			# 	print(self.data["certDisplay"])
+			# 	self.data["certDisplay"] = self.data["certDisplay"][:-1]
 
 	def rollupEducation(self):
-		for edu in self.data["education"]:
-			self.data["eduDisplay"] += self.data["education"][edu].displayString + "   " #Need to make this a GREP searchable expression to replace with a return line
+		for i, edu in enumerate(self.data["education"]):
+			self.data["eduDisplay"] += self.data["education"][edu].displayString + "~" #Need to make this a GREP searchable expression to replace with a return line
+			if i == len(self.data["education"]) - 1:
+				self.data["eduDisplay"] = self.data["eduDisplay"][:-1]
 
 	def removeTrailingComma(self):
 		if self.data["licenseDisplay"].endswith(", "):
@@ -445,10 +451,13 @@ for element in section[:]:
 				# 		resumeIntroSave[employeeCount] = element.getAttribute(key)
 				
 
-# Loop to execute for each license
+# Loop to execute for each license and degree - other iterables (certs and courses) need to be parsed first and therefore are found in the loop below
 for emp in allEmployees:
 	for edu in allEmployees[emp].data["education"]:
 		allEmployees[emp].data["education"][edu].getEducationResumeFormat()
+
+	for lic in allEmployees[emp].data["licenses"]:
+		allEmployees[emp].data["licenses"][lic].getLicenseResumeFormat()
 
 
 
