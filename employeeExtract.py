@@ -10,7 +10,15 @@ section = mydoc.getElementsByTagName('Detail')
 
 #### PLEASE NOTE: The author is aware that this code needs a healthy does of DRY and general improvements for readability and maintenance. It is a first attempt to hack together a xml parsing program in Python, a new language to the original author. There is uneeded complexity and repition which will be worked out once a working prototype is fully developed. 
 
-employeeErrors = []
+# TODO 
+# - Validate data is being correctly parsed and assigned 
+# - Some certs need to not have numbers e.g. northeast safety council
+# - Some certs need not be shown at all - add list of either acceptable certs or unacceptable certs and filter
+# - Make indesign boxes auto fit
+# 	- Have overflow places 
+# - Incorporate projects
+
+employeeErrors = [] # Will eventually house relevant, expired certs and courses and serve as an alert
 
 def formatDate(date):
 	return datetime.strptime(date[:-9], '%Y-%m-%d').date() #May add to Employee
@@ -140,7 +148,7 @@ class Employee:
 
 	def formatName(self):
 		acceptedSuffixes = ["PE", "EI", "EIT", "CBI", "II", "III"]
-		specialNameCases = {"Kincaid": "Ikaika Kincaid", "Maurer": "Mary Ellen Maurer", "Cole": "Branson Cole", "Sasher": "Christopher Sasher"}
+		specialNameCases = {"Kincaid": "Ikaika Kincaid", "Maurer": "Mary Ellen Maurer", "Cole": "Branson Cole", "Sasher": "Christopher Sasher", "Rainville": "Arthur Rainville"}
 		formName = self.data["name"].strip().split(" ")
 
 		if len(formName) > 2:
@@ -294,6 +302,7 @@ class License(Employee):
 		self.isExpired = False
 		self.displayString = None 
 
+## TODO: catch RPLS Licenses and Render them appropriately 
 	def formatType(self, licType):
 		if licType == "Professional Engineer":
 			return "PE"
@@ -316,10 +325,7 @@ class License(Employee):
 			if self.isMain == True:
 				self.displayString = self.data["state"] + " #" + self.data["number"]
 			self.displayString = self.data["state"] + ", "
-
-
-	
-		
+			
 class Course(Employee):
 
 	def __init__(self, name=None, dateTaken=None, agency=None, number=0):
