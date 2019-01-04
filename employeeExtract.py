@@ -4,7 +4,7 @@ from dateutil import relativedelta #for handling difference in dates
 from itertools import tee, islice, chain
 import csv #for writing to CSV
 
-mydoc = minidom.parse('WOP-ALLIEI.xml')
+mydoc = minidom.parse('WOP-IEIONLY.xml')
 
 section = mydoc.getElementsByTagName('Detail')
 
@@ -13,10 +13,13 @@ section = mydoc.getElementsByTagName('Detail')
 # TODO 
 # - Validate data is being correctly parsed and assigned 
 # - Some certs need to not have numbers e.g. northeast safety council
-# - Some certs need not be shown at all - add list of either acceptable certs or unacceptable certs and filter
+# - Some certs need not be shown at all - add list of either acceptable certs or unacceptable certs and filter to cut down on space used by unecessary certs
 # - Make indesign boxes auto fit
 # 	- Have overflow places 
 # - Incorporate projects
+# - If there are X many PEs - resume should just show 1 and the "and XX many states" - test to see how many states fit
+# - If they are not a PE then "Professional Engineer" should not be on the resume
+# - add link to employee images in vision that can be used - should be a relative path so it will take consideration - start putting the output file where it will live
 
 employeeErrors = [] # Will eventually house relevant, expired certs and courses and serve as an alert
 
@@ -99,7 +102,7 @@ class Employee:
 		"detail_Education_Institution": "edu",
 		"detail_Education_Year": "edu",
 		# "Design and Inspection Resume": "",
-		"detail_level": "res" #Shows up first but serves as a poor hook
+		"detail_level": "res" #Shows up first but serves as a poor hook because not all have one 
 	}
 
 	dataKey = { #need to add other fields
@@ -137,7 +140,7 @@ class Employee:
 
 	def bioDataProcessor(self, val, tagName):
 		dataType = self.dataKey[tagName][1]
-		formattedData = self.formatData(val, dataType)  #Functioned derrived from base class Employee
+		formattedData = self.formatData(val, dataType)  
 		self.data[self.dataKey[tagName][0]] = formattedData
 
 
@@ -175,6 +178,11 @@ class Employee:
 		for license in self.data["licenses"]:
 			if self.data["licenses"][license].displayString is not None:
 				self.data["licenseDisplay"] += self.data["licenses"][license].displayString
+		if self.data["licenseDisplay"]:
+			self.data["licenseDisplay"] = "Professional Engineer~" + self.data["licenseDisplay"]
+
+
+
 		# HERE IS WHERE YOU CAN ADD "AND": insert it X many spots back (X sould be the appropriate [place for all instances])
 
 	def rollupCourses(self):
