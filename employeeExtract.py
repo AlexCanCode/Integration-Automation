@@ -5,7 +5,7 @@ from itertools import tee, islice, chain
 import csv #for writing to CSV
 import json #for converting dictionary to string
 
-mydoc = minidom.parse('WOP-IEIONLY.xml')
+mydoc = minidom.parse('WOPWRB - IEIONLY.xml')
 
 section = mydoc.getElementsByTagName('Detail')
 
@@ -19,7 +19,6 @@ section = mydoc.getElementsByTagName('Detail')
 # 	- Have overflow places 
 # - Incorporate projects
 # - If there are X many PEs - resume should just show 1 and the "and XX many states" - test to see how many states fit
-# - If they are not a PE then "Professional Engineer" should not be on the resume
 # - add link to employee images in vision that can be used - should be a relative path so it will take consideration - start putting the output file where it will live
 
 employeeErrors = [] # Will eventually house relevant, expired certs and courses and serve as an alert
@@ -60,6 +59,8 @@ class Employee:
 			"hireDate": 0,
 			"priorYearsFirm": 0,
 			"priorYearsOther": 0,
+			"introDisplay": "",
+			"introBlurbBank": "",
 			"licenses": {}, 
 			"licenseDisplay": "",
 			"licenseBank": "",
@@ -75,7 +76,10 @@ class Employee:
 			"PELicenseCount": 0, 
 			"courseCount": 0,
 			"certCount": 0, 
-			"degreeCount": 0
+			"degreeCount": 0, 
+			"bioMemo": "", 
+			"imagePath": "",
+			"resumeBlurbs": []
 		}
 
 	detailKey = {
@@ -85,7 +89,7 @@ class Employee:
 		"DetailField_PriorYearsFirm_Section_1": "bio", 
 		"DetailField_YearsOtherFirms_Section_1": "bio",
 		"DetailField_Suffix_Section_1": "bio",
-		"detail_city": "city",
+		"DetailField_emmemo_Section_1": "bio",
 		"detail_Licenses_License": "lic",
 		"detail_Licenses_Earned": "lic",
 		"detail_Licenses_State": "lic",
@@ -104,8 +108,8 @@ class Employee:
 		"detail_Education_Specialty": "edu",
 		"detail_Education_Institution": "edu",
 		"detail_Education_Year": "edu",
-		# "Design and Inspection Resume": "",
-		"detail_level": "res" #Shows up first but serves as a poor hook because not all have one 
+		"detail_Resume_Category": "res",
+		"detail_Resume_Resume": "res" 
 	}
 
 	dataKey = { #need to add other fields
@@ -114,7 +118,8 @@ class Employee:
 		"DetailField_HireDate_Section_1": ["hireDate", "date"],
 		"DetailField_PriorYearsFirm_Section_1": ["priorYearsFirm", "int"], 
 		"DetailField_YearsOtherFirms_Section_1": ["priorYearsOther", "int"], 
-		"DetailField_Suffix_Section_1": ["nameSuffix", "str"] 
+		"DetailField_Suffix_Section_1": ["nameSuffix", "str"], 
+		"DetailField_emmemo_Section_1": ["bioMemo", "str"] 
 	}
 
 	objectKey = {
@@ -131,6 +136,8 @@ class Employee:
 		"detail_Education_Specialty": "specialty",
 		"detail_Education_Institution": "school",
 		"detail_Education_Year": "gradYear",
+		"detail_Resume_Category": "category",
+		"detail_Resume_Resume": "text" 
 	}
 
 	def formatData(self, data, dataType):
@@ -313,6 +320,21 @@ class Employee:
 			number = stagingArray["detail_gridUDCol_Employees_Certifications_custCertNumber"]
 		self.data["certObjects"][self.data["certCount"]] = Certification(agency, number, title, expDate)
 
+	# def parseImagePath(self):
+		# Write funciton that parses image path from in between backticks 
+
+	def rollupResumeBlurbs(self): #this can be strengthened with command line arguments for which intros to use
+		counter = 0
+		for item in self.data["resumeBlurbs"]:
+			counter += 1
+			if counter == 1:
+				pass
+			if counter == 2:
+				self.data["introDisplay"] = item
+			elif counter%2 == 0:
+				self.data["introBlurbBank"] += item + "~~"
+			else:
+				self.data["introBlurbBank"] += item + "~~"
 
 
 allEmployees = dict()
@@ -442,7 +464,6 @@ class Certification(Employee):
 					listToSanitize.append(self.data[item])
 					self.displayString = ', '.join(listToSanitize)
 
-resumeIntroSave = {}
 employeeCount = 0
 
 # To do - make this switch nonsense more sane 
@@ -474,18 +495,8 @@ for element in section[:]:
 					allEmployees[objectName].data["education"][allEmployees[objectName].data["degreeCount"]].data[Employee.objectKey[key]] = element.getAttribute(key)
 				except KeyError:
 					pass
-			# if Employee.detailKey[key] == "res":
-				# try:
-				# 	if allEmployees[objectName] == False:
-				# 		employeeCount += 1
-				# 		resumeIntroSave[employeeCount] = element.getAttribute(key)
-				# elif allEmployees[objectName]:
-
-				# 	if employeeCount in resumeIntroSave:
-				# 		resumeIntroSave[employeeCount] += ", " + element.getAttribute(key)
-				# 	else:
-				# 		employeeCount += 1
-				# 		resumeIntroSave[employeeCount] = element.getAttribute(key)
+			if Employee.detailKey[key] == "res":
+				allEmployees[objectName].data["resumeBlurbs"].append(element.getAttribute(key))
 				
 
 # Loop to execute for each license and degree - other iterables (certs and courses) need to be parsed first and therefore are found in the loop below
@@ -507,6 +518,7 @@ for emp in allEmployees:
 	allEmployees[emp].parseCourses()
 	allEmployees[emp].parseCerts()
 	allEmployees[emp].formatName()
+	allEmployees[emp].rollupResumeBlurbs()
 
 	for cor in allEmployees[emp].data["courseObjects"]:
 		allEmployees[emp].data["courseObjects"][cor].getCourseResumeFormat()	
@@ -517,11 +529,11 @@ for emp in allEmployees:
 	allEmployees[emp].rollupCourses()
 	allEmployees[emp].rollupCerts()
 
-
+	allEmployees[emp].data
 # Write to iterate over the dictionary of employees 
 
 with open('employeeInfo.csv', 'w', newline='') as csvfile:
-	fieldnames = ["displayName", "title", "hireDate", "priorYearsFirm", "priorYearsOther", "licenseDisplay", "licenseBank", "eduDisplay", "courseDisplay", "certDisplay", "resumeIntro", "totalYearsExp", "degreeCount", "courseCount", "PELicenseCount", "certCount", "licenses", "education", "courses", "courseObjects", "certifications", "certObjects", "name", "nameSuffix"]
+	fieldnames = ["displayName", "title", "totalYearsExp",  "introDisplay", "introBlurbBank", "licenseDisplay", "licenseBank", "eduDisplay", "courseDisplay", "certDisplay", "resumeIntro","hireDate", "priorYearsFirm", "priorYearsOther", "degreeCount", "courseCount", "PELicenseCount", "certCount", "licenses", "education", "courses", "courseObjects", "certifications", "certObjects", "name", "nameSuffix", "bioMemo", "imagePath", "resumeBlurbs"]
 	writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 	writer.writeheader()
 	for emp in allEmployees:
