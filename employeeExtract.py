@@ -3,6 +3,7 @@ from datetime import datetime #For formatting dates
 from dateutil import relativedelta #for handling difference in dates
 from itertools import tee, islice, chain
 import csv #for writing to CSV
+import json #for converting dictionary to string
 
 mydoc = minidom.parse('WOP-IEIONLY.xml')
 
@@ -61,6 +62,7 @@ class Employee:
 			"priorYearsOther": 0,
 			"licenses": {}, 
 			"licenseDisplay": "",
+			"licenseBank": "",
 			"eduDisplay": "",
 			"courseDisplay": "",
 			"courses": [],
@@ -83,6 +85,7 @@ class Employee:
 		"DetailField_PriorYearsFirm_Section_1": "bio", 
 		"DetailField_YearsOtherFirms_Section_1": "bio",
 		"DetailField_Suffix_Section_1": "bio",
+		"detail_city": "city",
 		"detail_Licenses_License": "lic",
 		"detail_Licenses_Earned": "lic",
 		"detail_Licenses_State": "lic",
@@ -150,10 +153,10 @@ class Employee:
 		self.data["totalYearsExp"] = (difference + self.data["priorYearsFirm"] + self.data["priorYearsOther"])
 
 	def formatName(self):
-		acceptedSuffixes = ["PE", "EI", "EIT", "CBI", "II", "III"]
-		specialNameCases = {"Kincaid": "Ikaika Kincaid", "Maurer": "Mary Ellen Maurer", "Cole": "Branson Cole", "Sasher": "Christopher Sasher", "Rainville": "Arthur Rainville"}
+		acceptedSuffixes = ["PE", "EI", "EIT", "CBI", "II", "III", "Jr."]
+		specialNameCases = {"Kincaid": "Ikaika Kincaid", "Maurer": "Mary Ellen Maurer", "Cole": "Branson Cole", "Sasher": "Christopher Sasher", "Rainville": "Arthur Rainville", "Sybille": "Sybille Bayard", "Dillon": "Dillon Winters"}
+		specialCase = False
 		formName = self.data["name"].strip().split(" ")
-
 		if len(formName) > 2:
 			del formName[1]
 		
@@ -165,9 +168,10 @@ class Employee:
 				self.data["nameSuffix"] += ", PE"
 
 		if formName[-1] in specialNameCases:
-			self.data["name"] = specialNameCases[formName[-1]]
-
-		formName = " ".join(formName)
+			formName = specialNameCases[formName[-1]]
+			specialCase = True
+		if specialCase == False:
+			formName = " ".join(formName)
 		
 		if self.data["nameSuffix"]:
 			self.data["displayName"] = formName + ", " + self.data["nameSuffix"]
@@ -175,13 +179,30 @@ class Employee:
 			self.data["displayName"] = formName
 
 	def rollupLicenses(self):
+		licenseNumber = 0
+		#Determine how many license there are (if only 1 we can display with number)
 		for license in self.data["licenses"]:
-			if self.data["licenses"][license].displayString is not None:
+			if self.data["licenses"][license].isExpired:
+				pass
+			elif self.data["licenses"][license].data["dateExpire"] == 0:
+				pass
+			else:
+				licenseNumber += 1
+
+		# format display, if only 1 display with number, else push numbers to license bank outside visible document space
+		for license in self.data["licenses"]:
+			if self.data["licenses"][license]:
+				if self.data["licenses"][license].data["state"] and self.data["licenses"][license].data["number"] and self.data["licenses"][license].isExpired == False:
+						self.data["licenseBank"] += self.data["licenses"][license].data["state"] + " #" + self.data["licenses"][license].data["number"] + " - " + self.data["licenses"][license].data["type"] + "~"
+
+			if licenseNumber == 1:
+				if self.data["licenses"][license].data["number"] and self.data["licenses"][license].displayString:
+					self.data["licenses"][license].displayString = self.data["licenses"][license].displayString[:-2]
+					self.data["licenseDisplay"] = self.data["licenses"][license].displayString + " #" + self.data["licenses"][license].data["number"]
+			elif self.data["licenses"][license].displayString is not None:
 				self.data["licenseDisplay"] += self.data["licenses"][license].displayString
 		if self.data["licenseDisplay"]:
 			self.data["licenseDisplay"] = "Professional Engineer~" + self.data["licenseDisplay"]
-
-
 
 		# HERE IS WHERE YOU CAN ADD "AND": insert it X many spots back (X sould be the appropriate [place for all instances])
 
@@ -328,6 +349,7 @@ class License(Employee):
 			return
 		today = datetime.now().date()
 		if today > formatDate(self.data["dateExpire"]):
+			self.isExpired = True
 			return self.data["state"] + " License is expired for " #Get employee name to make this a more useful error
 		elif today < formatDate(self.data["dateExpire"]):
 			if self.isMain == True:
@@ -494,13 +516,12 @@ for emp in allEmployees:
 	
 	allEmployees[emp].rollupCourses()
 	allEmployees[emp].rollupCerts()
-	# print(allEmployees[emp].data["displayName"], allEmployees[emp].data["resumeIntro"])
 
 
 # Write to iterate over the dictionary of employees 
 
 with open('employeeInfo.csv', 'w', newline='') as csvfile:
-	fieldnames = ["displayName", "title", "hireDate", "priorYearsFirm", "priorYearsOther", "licenseDisplay", "eduDisplay", "courseDisplay", "certDisplay", "resumeIntro", "totalYearsExp", "degreeCount", "courseCount", "PELicenseCount", "certCount", "licenses", "education", "courses", "courseObjects", "certifications", "certObjects", "name", "nameSuffix"]
+	fieldnames = ["displayName", "title", "hireDate", "priorYearsFirm", "priorYearsOther", "licenseDisplay", "licenseBank", "eduDisplay", "courseDisplay", "certDisplay", "resumeIntro", "totalYearsExp", "degreeCount", "courseCount", "PELicenseCount", "certCount", "licenses", "education", "courses", "courseObjects", "certifications", "certObjects", "name", "nameSuffix"]
 	writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 	writer.writeheader()
 	for emp in allEmployees:
