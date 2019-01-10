@@ -77,7 +77,7 @@ class Employee:
 			"courseCount": 0,
 			"certCount": 0, 
 			"degreeCount": 0, 
-			"bioMemo": "", 
+			# "bioMemo": "", # TODO - Run reg ex to remove all uneeded parts of memo because they cause CSV issues
 			"imagePath": "",
 			"resumeBlurbs": []
 		}
@@ -89,7 +89,7 @@ class Employee:
 		"DetailField_PriorYearsFirm_Section_1": "bio", 
 		"DetailField_YearsOtherFirms_Section_1": "bio",
 		"DetailField_Suffix_Section_1": "bio",
-		"DetailField_emmemo_Section_1": "bio",
+		# "DetailField_emmemo_Section_1": "bio", FIX ISSUE WITH MEMO 
 		"detail_Licenses_License": "lic",
 		"detail_Licenses_Earned": "lic",
 		"detail_Licenses_State": "lic",
@@ -119,7 +119,7 @@ class Employee:
 		"DetailField_PriorYearsFirm_Section_1": ["priorYearsFirm", "int"], 
 		"DetailField_YearsOtherFirms_Section_1": ["priorYearsOther", "int"], 
 		"DetailField_Suffix_Section_1": ["nameSuffix", "str"], 
-		"DetailField_emmemo_Section_1": ["bioMemo", "str"] 
+		# "DetailField_emmemo_Section_1": ["bioMemo", "str"] # Uncomment when bio field fixed 
 	}
 
 	objectKey = {
@@ -330,12 +330,11 @@ class Employee:
 			if counter == 1:
 				pass
 			if counter == 2:
-				self.data["introDisplay"] = item
+				self.data["introDisplay"] = item.replace("\n", " ").replace("\r", " ")
 			elif counter%2 == 0:
-				self.data["introBlurbBank"] += item + "~~"
+				self.data["introBlurbBank"] += item.replace("\n", " ").replace("\r", " ") + "~~"
 			else:
-				self.data["introBlurbBank"] += item + "~~"
-
+				self.data["introBlurbBank"] += item.replace("\n", " ").replace("\r", " ") + "~~"
 
 allEmployees = dict()
 
@@ -533,7 +532,7 @@ for emp in allEmployees:
 # Write to iterate over the dictionary of employees 
 
 with open('employeeInfo.csv', 'w', newline='') as csvfile:
-	fieldnames = ["displayName", "title", "totalYearsExp",  "introDisplay", "introBlurbBank", "licenseDisplay", "licenseBank", "eduDisplay", "courseDisplay", "certDisplay", "resumeIntro","hireDate", "priorYearsFirm", "priorYearsOther", "degreeCount", "courseCount", "PELicenseCount", "certCount", "licenses", "education", "courses", "courseObjects", "certifications", "certObjects", "name", "nameSuffix", "bioMemo", "imagePath", "resumeBlurbs"]
+	fieldnames = ["displayName", "title", "totalYearsExp",  "introDisplay", "introBlurbBank", "licenseDisplay", "licenseBank", "eduDisplay", "courseDisplay", "certDisplay", "resumeIntro","hireDate", "priorYearsFirm", "priorYearsOther", "degreeCount", "courseCount", "PELicenseCount", "certCount", "licenses", "education", "courses", "courseObjects", "certifications", "certObjects", "name", "nameSuffix", "imagePath", "resumeBlurbs"]
 	writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 	writer.writeheader()
 	for emp in allEmployees:
