@@ -5,7 +5,7 @@ from itertools import tee, islice, chain
 import csv #for writing to CSV
 import json #for converting dictionary to string
 
-mydoc = minidom.parse('WOPWRB - IEIONLY.xml')
+mydoc = minidom.parse('Polk County Resumes - 1.10.2019.xml')
 
 section = mydoc.getElementsByTagName('Detail')
 
@@ -161,7 +161,7 @@ class Employee:
 
 	def formatName(self):
 		acceptedSuffixes = ["PE", "EI", "EIT", "CBI", "II", "III", "Jr."]
-		specialNameCases = {"Kincaid": "Ikaika Kincaid", "Maurer": "Mary Ellen Maurer", "Cole": "Branson Cole", "Sasher": "Christopher Sasher", "Rainville": "Arthur Rainville", "Sybille": "Sybille Bayard", "Dillon": "Dillon Winters"}
+		specialNameCases = {"Kincaid": "Ikaika Kincaid", "Maurer": "Mary Ellen Maurer", "Cole": "Branson Cole", "Sasher": "Christopher Sasher", "Rainville": "Arthur Rainville", "Sybille": "Sybille Bayard", "Dillon": "Dillon Winters", "Umlauf": "Bill Umlauf"}
 		specialCase = False
 		formName = self.data["name"].strip().split(" ")
 		if len(formName) > 2:
@@ -531,7 +531,7 @@ for emp in allEmployees:
 	allEmployees[emp].data
 # Write to iterate over the dictionary of employees 
 
-with open('employeeInfo.csv', 'w', newline='') as csvfile:
+with open('polkCounty.csv', 'w', newline='') as csvfile:
 	fieldnames = ["displayName", "title", "totalYearsExp",  "introDisplay", "introBlurbBank", "licenseDisplay", "licenseBank", "eduDisplay", "courseDisplay", "certDisplay", "resumeIntro","hireDate", "priorYearsFirm", "priorYearsOther", "degreeCount", "courseCount", "PELicenseCount", "certCount", "licenses", "education", "courses", "courseObjects", "certifications", "certObjects", "name", "nameSuffix", "imagePath", "resumeBlurbs"]
 	writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 	writer.writeheader()
