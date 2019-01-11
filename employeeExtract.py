@@ -13,7 +13,7 @@ section = mydoc.getElementsByTagName('Detail')
 
 # TODO 
 # - Validate data is being correctly parsed and assigned 
-# - Some certs need to not have numbers e.g. northeast safety council
+# - Should only show course numbers for NHI or FHWA Courses
 # - Some certs need not be shown at all - add list of either acceptable certs or unacceptable certs and filter to cut down on space used by unecessary certs
 # - Make indesign boxes auto fit
 # 	- Have overflow places 
